@@ -1,4 +1,10 @@
 mod scanner;
+mod token;
+pub mod prelude {
+    pub use crate::scanner::*;
+    pub use crate::token::*;
+}
+
 use std::io::Write;
 
 pub fn run_file(filename: &str) -> Result<(), anyhow::Error> {

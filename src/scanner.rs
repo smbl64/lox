@@ -1,3 +1,5 @@
+use crate::prelude::*;
+
 #[derive(Debug)]
 pub struct Scanner {
     input: String,
@@ -14,6 +16,3 @@ impl Scanner {
         todo!()
     }
 }
-
-#[derive(Debug)]
-pub struct Token {}
