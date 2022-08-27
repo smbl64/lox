@@ -19,7 +19,8 @@ pub fn run_prompt() -> Result<(), anyhow::Error> {
             return Ok(());
         }
         let line = line.trim_end();
-        run(line)?;
+        // Ignore errors in the prompt mode
+        let _ = run(line);
     }
 }
 
@@ -31,4 +32,13 @@ pub fn run(input: &str) -> Result<(), anyhow::Error> {
         println!("{:?}", token);
     }
     Ok(())
+}
+
+pub fn error(line: i32, message: String) {
+    report(line, "".to_owned(), message);
+}
+
+fn report(line: i32, location: String, message: String) {
+    eprintln!("[line {}] Error {}: {}", line, location, message);
+    // TODO: HAD_ERROR = true;
 }
