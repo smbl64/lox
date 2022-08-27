@@ -1,3 +1,4 @@
+mod scanner;
 use std::io::Write;
 
 pub fn run_file(filename: &str) -> Result<(), anyhow::Error> {
@@ -23,6 +24,11 @@ pub fn run_prompt() -> Result<(), anyhow::Error> {
 }
 
 pub fn run(input: &str) -> Result<(), anyhow::Error> {
-    println!("Got: {}", input);
+    let scanner = scanner::Scanner::new(input);
+    let tokens = scanner.scan_tokens();
+
+    for token in tokens {
+        println!("{:?}", token);
+    }
     Ok(())
 }
