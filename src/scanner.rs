@@ -55,7 +55,7 @@ impl Scanner {
             ';' => self.add_token(TokenType::Semicolor),
             '*' => self.add_token(TokenType::Star),
             '!' => {
-                let token_type = if self.match_ch('=') {
+                let token_type = if self.match_next('=') {
                     TokenType::BangEqual
                 } else {
                     TokenType::Bang
@@ -63,7 +63,7 @@ impl Scanner {
                 self.add_token(token_type);
             }
             '=' => {
-                let token_type = if self.match_ch('=') {
+                let token_type = if self.match_next('=') {
                     TokenType::EqualEqual
                 } else {
                     TokenType::Equal
@@ -71,7 +71,7 @@ impl Scanner {
                 self.add_token(token_type);
             }
             '<' => {
-                let token_type = if self.match_ch('=') {
+                let token_type = if self.match_next('=') {
                     TokenType::LessEqual
                 } else {
                     TokenType::Less
@@ -79,7 +79,7 @@ impl Scanner {
                 self.add_token(token_type);
             }
             '>' => {
-                let token_type = if self.match_ch('=') {
+                let token_type = if self.match_next('=') {
                     TokenType::GreaterEqual
                 } else {
                     TokenType::Greater
@@ -87,7 +87,7 @@ impl Scanner {
                 self.add_token(token_type);
             }
             '/' => {
-                if self.match_ch('/') {
+                if self.match_next('/') {
                     // Go until end of the commented line
                     while self.peek() != '\n' && !self.is_at_end() {
                         self.advance();
@@ -130,7 +130,7 @@ impl Scanner {
         self.tokens.push(token)
     }
 
-    fn match_ch(&mut self, expected: char) -> bool {
+    fn match_next(&mut self, expected: char) -> bool {
         if self.is_at_end() {
             return false;
         }
