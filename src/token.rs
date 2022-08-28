@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 #[allow(dead_code)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum TokenType {
     // Single-character tokens.
     LeftParen,
@@ -52,25 +52,30 @@ pub enum TokenType {
     EOF,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum LiteralValue {
     Number(f64),
     String(String),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Token {
     pub token_type: TokenType,
     pub lexeme: String,
-    pub literal: LiteralValue,
+    pub literal: Option<LiteralValue>,
     pub line: i32,
 }
 
 impl Token {
-    pub fn new(token_type: TokenType, lexeme: String, literal: LiteralValue, line: i32) -> Self {
+    pub fn new(
+        token_type: TokenType,
+        lexeme: &str,
+        literal: Option<LiteralValue>,
+        line: i32,
+    ) -> Self {
         Self {
             token_type,
-            lexeme,
+            lexeme: lexeme.to_owned(),
             literal,
             line,
         }
