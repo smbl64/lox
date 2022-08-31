@@ -5,12 +5,12 @@ fn main() -> Result<(), anyhow::Error> {
     match args.len() {
         1 => {
             let filename = args.pop().unwrap();
-            clox::run_file(filename.as_ref())
+            rlox::run_file(filename.as_ref())
         }
         2.. => {
-            println!("Usage: clox [script]");
+            println!("Usage: rlox [script]");
             std::process::exit(64);
         }
-        _ => clox::run_prompt(),
+        _ => rlox::run_prompt(),
     }
 }
