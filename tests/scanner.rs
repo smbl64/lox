@@ -6,5 +6,5 @@ fn scanner_works() {
     let mut scanner = Scanner::new(input);
     let tokens = scanner.scan_tokens();
     //dbg!(&tokens);
-    assert_eq!(tokens.len(), 3);
+    assert_eq!(tokens.len(), 4);
 }
