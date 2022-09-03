@@ -10,6 +10,8 @@ pub mod prelude {
 
 use std::io::Write;
 
+use prelude::{AstPrinter, Parser, Visitor};
+
 pub fn run_file(filename: &str) -> Result<(), anyhow::Error> {
     let content = std::fs::read_to_string(filename)?;
     run(content.as_ref())
@@ -36,10 +38,15 @@ pub fn run_prompt() -> Result<(), anyhow::Error> {
 pub fn run(input: &str) -> Result<(), anyhow::Error> {
     let mut scanner = scanner::Scanner::new(input);
     let tokens = scanner.scan_tokens();
-
-    for token in tokens {
-        println!("{}", token);
+    let mut parser = Parser::new(tokens);
+    match parser.parse() {
+        None => return Ok(()),
+        Some(expr) => {
+            let printer = AstPrinter;
+            println!("{}", printer.visit(&expr));
+        }
     }
+
     Ok(())
 }
 

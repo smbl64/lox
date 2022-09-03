@@ -3,7 +3,7 @@ use crate::{
     token::{LiteralValue, Token, TokenType},
 };
 
-trait Visitor<R> {
+pub trait Visitor<R> {
     fn visit(&self, expr: &Expr) -> R;
 }
 
@@ -40,7 +40,7 @@ impl Expr {
     }
 }
 
-struct AstPrinter;
+pub struct AstPrinter;
 
 impl Visitor<String> for AstPrinter {
     fn visit(&self, expr: &Expr) -> String {
@@ -208,9 +208,9 @@ impl Parser {
 
     fn error(&self, token: Token, message: &str) {
         if token.token_type == TokenType::EOF {
-            report(token.line, " at end", message);
+            report(token.line, "at end", message);
         } else {
-            report(token.line, &format!(" at '{}'", token.lexeme), message);
+            report(token.line, &format!("at '{}'", token.lexeme), message);
         }
     }
 
