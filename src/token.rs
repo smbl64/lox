@@ -54,6 +54,8 @@ pub enum TokenType {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum LiteralValue {
+    Null,
+    Boolean(bool),
     Number(f64),
     String(String),
 }
@@ -61,8 +63,10 @@ pub enum LiteralValue {
 impl Display for LiteralValue {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::Boolean(b) => write!(f, "{}", b),
             Self::Number(n) => write!(f, "{}", n),
             Self::String(s) => write!(f, "{}", s),
+            Self::Null => write!(f, "nil"),
         }
     }
 }
