@@ -31,9 +31,9 @@ impl Scanner {
         self.tokens
             .push(Token::new(TokenType::EOF, "", None, self.line));
 
-        // Replace our temporary tokens with an empty vector
-        // and return the tokens
-        std::mem::replace(&mut self.tokens, vec![])
+        // Take our temporary tokens out. It will be replaced by the default()
+        // value for the vector
+        std::mem::take(&mut self.tokens)
     }
 
     fn is_at_end(&self) -> bool {
@@ -191,7 +191,7 @@ impl Scanner {
             // Consume '.'
             self.advance();
 
-            while self.peek().is_digit(10) {
+            while self.peek().is_ascii_digit() {
                 self.advance();
             }
         }
