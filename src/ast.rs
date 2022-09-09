@@ -64,6 +64,42 @@ impl Visitor<String> for AstPrinter {
     }
 }
 
+pub struct Interpreter;
+
+impl Visitor<LiteralValue> for Interpreter {
+    fn visit(&self, expr: &Expr) -> LiteralValue {
+        match expr {
+            Expr::Literal { value } => value.clone(),
+            Expr::Grouping { expr: inner } => self.visit(inner),
+            Expr::Unary { operator, right } => {
+                let value = self.visit(right);
+
+                if operator.token_type == TokenType::Minus {
+                    if let LiteralValue::Number(n) = value {
+                        return LiteralValue::Number(-n);
+                    }
+                } else if operator.token_type == TokenType::Bang {
+                    return LiteralValue::Boolean(!self.is_truthy(&value));
+                }
+
+                // Unreachable code. We don't any unary expression except the ones above.
+                LiteralValue::Null
+            }
+            _ => LiteralValue::Null,
+        }
+    }
+}
+
+impl Interpreter {
+    fn is_truthy(&self, value: &LiteralValue) -> bool {
+        match value {
+            LiteralValue::Null => false,
+            LiteralValue::Boolean(false) => false,
+            _ => true,
+        }
+    }
+}
+
 pub struct Parser {
     tokens: Vec<Token>,
     current: usize,
