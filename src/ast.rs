@@ -109,7 +109,7 @@ impl Interpreter {
         // Both operands are numbers
         let left_value = self.visit(left);
         let right_value = self.visit(right);
-        if let (LiteralValue::Number(l), LiteralValue::Number(r)) = (&left_value, &right_value) {
+        if let (Some(l), Some(r)) = (left_value.number(), right_value.number()) {
             match operator.token_type {
                 TokenType::Minus => return LiteralValue::Number(l - r),
                 TokenType::Plus => return LiteralValue::Number(l + r),
@@ -124,11 +124,12 @@ impl Interpreter {
         }
 
         // Both operands are strings
-        if let (LiteralValue::String(l), LiteralValue::String(r)) = (&left_value, &right_value) {
+        if let (Some(l), Some(r)) = (left_value.string(), right_value.string()) {
             if operator.token_type == TokenType::Plus {
                 return LiteralValue::String(format!("{}{}", l, r));
             }
         }
+
         if operator.token_type == TokenType::EqualEqual {
             return LiteralValue::Boolean(left_value == right_value);
         }

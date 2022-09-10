@@ -60,6 +60,27 @@ pub enum LiteralValue {
     String(String),
 }
 
+impl LiteralValue {
+    pub fn number(&self) -> Option<f64> {
+        match self {
+            Self::Number(n) => Some(*n),
+            _ => None,
+        }
+    }
+    pub fn boolean(&self) -> Option<bool> {
+        match self {
+            Self::Boolean(b) => Some(*b),
+            _ => None,
+        }
+    }
+    pub fn string(&self) -> Option<String> {
+        match self {
+            Self::String(s) => Some(s.clone()),
+            _ => None,
+        }
+    }
+}
+
 impl Display for LiteralValue {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
