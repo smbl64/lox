@@ -12,11 +12,15 @@ pub mod prelude {
 
 use std::io::Write;
 
-use prelude::{AstPrinter, Parser, Visitor};
+use prelude::{AstPrinter, Parser, RuntimeError, Visitor};
 
 pub fn run_file(filename: &str) -> Result<(), anyhow::Error> {
     let content = std::fs::read_to_string(filename)?;
     run(content.as_ref())
+    // TODO
+    //// Indicate an error in the exit code.
+    //if (hadError) System.exit(65);
+    //if (hadRuntimeError) System.exit(70);
 }
 
 pub fn run_prompt() -> Result<(), anyhow::Error> {
@@ -59,4 +63,10 @@ pub fn error(line: i32, message: &str) {
 fn report(line: i32, location: &str, message: &str) {
     eprintln!("[line {}] Error {}: {}", line, location, message);
     // TODO: HAD_ERROR = true;
+}
+
+fn runtime_error(e: RuntimeError) {
+    eprintln!("{}", e);
+
+    // TODO: hadRuntimeError = true
 }

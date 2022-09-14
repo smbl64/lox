@@ -1,10 +1,22 @@
-use crate::prelude::*;
+use std::fmt::Display;
+
+use crate::{prelude::*, runtime_error};
 
 pub struct Interpreter;
 
 #[derive(Debug, PartialEq)]
 pub enum RuntimeError {
     InvalidOperand { operator: Token, msg: &'static str },
+}
+
+impl Display for RuntimeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            RuntimeError::InvalidOperand { operator, msg } => {
+                write!(f, "{}\n[line {}]", msg, operator.line)
+            }
+        }
+    }
 }
 
 type InterpreterResult = Result<LiteralValue, RuntimeError>;
@@ -25,6 +37,17 @@ impl Visitor<LiteralValue, RuntimeError> for Interpreter {
 }
 
 impl Interpreter {
+    pub fn interpret(&self, expression: &Expr) {
+        match self.visit(expression) {
+            Ok(v) => println!("{}", v),
+            Err(e) => runtime_error(e),
+        };
+    }
+
+    pub fn evaluate(&self, expression: &Expr) -> InterpreterResult {
+        self.visit(expression)
+    }
+
     fn is_truthy(&self, value: &LiteralValue) -> bool {
         match value {
             LiteralValue::Null => false,
@@ -132,7 +155,7 @@ mod tests {
         ($source:literal, $expected:expr, $lit_type:path) => {
             let ipr = Interpreter {};
             let expr = make_expression($source);
-            let res = ipr.visit(&expr);
+            let res = ipr.evaluate(&expr);
             assert!(res.is_ok());
             assert_eq!(res.unwrap(), $lit_type($expected));
         };
