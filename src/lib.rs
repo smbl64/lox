@@ -45,7 +45,7 @@ pub fn run(input: &str) -> Result<(), anyhow::Error> {
         None => return Ok(()),
         Some(expr) => {
             let printer = AstPrinter;
-            println!("{}", printer.visit(&expr));
+            println!("{}", printer.visit(&expr).unwrap());
         }
     }
 

@@ -3,8 +3,8 @@ use crate::{
     token::{LiteralValue, Token, TokenType},
 };
 
-pub trait Visitor<R> {
-    fn visit(&self, expr: &Expr) -> R;
+pub trait Visitor<R, E> {
+    fn visit(&self, expr: &Expr) -> Result<R, E>;
 }
 
 #[derive(Debug)]
@@ -42,9 +42,9 @@ impl Expr {
 
 pub struct AstPrinter;
 
-impl Visitor<String> for AstPrinter {
-    fn visit(&self, expr: &Expr) -> String {
-        match expr {
+impl Visitor<String, ()> for AstPrinter {
+    fn visit(&self, expr: &Expr) -> Result<String, ()> {
+        let s = match expr {
             Expr::Binary {
                 left,
                 operator,
@@ -52,15 +52,16 @@ impl Visitor<String> for AstPrinter {
             } => format!(
                 "({} {} {})",
                 operator.lexeme,
-                self.visit(left),
-                self.visit(right)
+                self.visit(left)?,
+                self.visit(right)?
             ),
-            Expr::Grouping { expr } => format!("(group {})", self.visit(expr)),
+            Expr::Grouping { expr } => format!("(group {})", self.visit(expr)?),
             Expr::Literal { value } => format!("{}", value),
             Expr::Unary { operator, right } => {
-                format!("({} {})", operator.lexeme, self.visit(right))
+                format!("({} {})", operator.lexeme, self.visit(right)?)
             }
-        }
+        };
+        Ok(s)
     }
 }
 
@@ -300,6 +301,8 @@ mod tests {
 
         let printer = AstPrinter;
         let res = printer.visit(&expr);
+        assert!(res.is_ok());
+        let res = res.unwrap();
         assert_eq!(res, "(* (- 123) (group 45.67))".to_owned());
     }
 }
