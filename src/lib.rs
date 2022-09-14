@@ -1,9 +1,11 @@
 #![warn(clippy::unwrap_in_result, clippy::expect_used)]
 mod ast;
+mod interpreter;
 mod scanner;
 mod token;
 pub mod prelude {
     pub use crate::ast::*;
+    pub use crate::interpreter::*;
     pub use crate::scanner::*;
     pub use crate::token::*;
 }
