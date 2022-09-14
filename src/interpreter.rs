@@ -2,6 +2,7 @@ use crate::prelude::*;
 
 pub struct Interpreter;
 
+#[derive(Debug, PartialEq)]
 pub enum RuntimeError {
     InvalidOperand { operator: Token, msg: &'static str },
 }
@@ -113,5 +114,150 @@ impl Interpreter {
                 msg: "Operands must be numbers",
             })
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_expression(source: &'static str) -> Expr {
+        let mut scanner = Scanner::new(source);
+        let tokens = scanner.scan_tokens();
+        let mut parser = Parser::new(tokens);
+        parser.parse().expect("failed to parse the source")
+    }
+
+    fn assert_literal(res: InterpreterResult, expected: LiteralValue) {
+        assert!(res.is_ok());
+        assert_eq!(res.unwrap(), expected);
+    }
+
+    #[test]
+    fn unary_minus() {
+        let ipr = Interpreter {};
+        let expr = make_expression("-3.14");
+        let res = ipr.visit(&expr);
+        assert_literal(res, LiteralValue::Number(-3.14));
+    }
+
+    #[test]
+    fn unary_bang() {
+        let ipr = Interpreter {};
+        let expr = make_expression("!true");
+        let res = ipr.visit(&expr);
+        assert_literal(res, LiteralValue::Boolean(false));
+    }
+
+    #[test]
+    fn binary_plus_numbers() {
+        let ipr = Interpreter {};
+        let expr = make_expression("10 + 20");
+        let res = ipr.visit(&expr);
+        assert_literal(res, LiteralValue::Number(30.0));
+    }
+
+    #[test]
+    fn binary_plus_strings() {
+        let ipr = Interpreter {};
+        let expr = make_expression(r#" "Hello " + "World!" "#);
+        let res = ipr.visit(&expr);
+        assert_literal(res, LiteralValue::String("Hello World!".to_string()));
+    }
+
+    #[test]
+    fn binary_minus() {
+        let ipr = Interpreter {};
+        let expr = make_expression("10 - 20");
+        let res = ipr.visit(&expr);
+        assert_literal(res, LiteralValue::Number(-10.0));
+    }
+
+    #[test]
+    fn binary_star() {
+        let ipr = Interpreter {};
+        let expr = make_expression("10 * 20");
+        let res = ipr.visit(&expr);
+        assert_literal(res, LiteralValue::Number(200.0));
+    }
+
+    #[test]
+    fn binary_slash() {
+        let ipr = Interpreter {};
+        let expr = make_expression("10 / 20");
+        let res = ipr.visit(&expr);
+        assert_literal(res, LiteralValue::Number(0.5));
+    }
+
+    #[test]
+    fn binary_greater() {
+        let ipr = Interpreter {};
+        let expr = make_expression("10 > 20");
+        let res = ipr.visit(&expr);
+        assert_literal(res, LiteralValue::Boolean(false));
+
+        let expr = make_expression("20 > 10");
+        let res = ipr.visit(&expr);
+        assert_literal(res, LiteralValue::Boolean(true));
+    }
+
+    #[test]
+    fn binary_greater_equal() {
+        let ipr = Interpreter {};
+        let expr = make_expression("10 >= 20");
+        let res = ipr.visit(&expr);
+        assert_literal(res, LiteralValue::Boolean(false));
+
+        let expr = make_expression("20 >= 10");
+        let res = ipr.visit(&expr);
+        assert_literal(res, LiteralValue::Boolean(true));
+    }
+
+    #[test]
+    fn binary_less() {
+        let ipr = Interpreter {};
+        let expr = make_expression("10 < 20");
+        let res = ipr.visit(&expr);
+        assert_literal(res, LiteralValue::Boolean(true));
+
+        let expr = make_expression("20 < 10");
+        let res = ipr.visit(&expr);
+        assert_literal(res, LiteralValue::Boolean(false));
+    }
+
+    #[test]
+    fn binary_less_equal() {
+        let ipr = Interpreter {};
+        let expr = make_expression("10 <= 20");
+        let res = ipr.visit(&expr);
+        assert_literal(res, LiteralValue::Boolean(true));
+
+        let expr = make_expression("20 <= 10");
+        let res = ipr.visit(&expr);
+        assert_literal(res, LiteralValue::Boolean(false));
+    }
+
+    #[test]
+    fn binary_equal_equal() {
+        let ipr = Interpreter {};
+        let expr = make_expression("10 == 20");
+        let res = ipr.visit(&expr);
+        assert_literal(res, LiteralValue::Boolean(false));
+
+        let expr = make_expression("10 == 10");
+        let res = ipr.visit(&expr);
+        assert_literal(res, LiteralValue::Boolean(true));
+    }
+
+    #[test]
+    fn binary_bang_equal() {
+        let ipr = Interpreter {};
+        let expr = make_expression("10 != 20");
+        let res = ipr.visit(&expr);
+        assert_literal(res, LiteralValue::Boolean(true));
+
+        let expr = make_expression("10 != 10");
+        let res = ipr.visit(&expr);
+        assert_literal(res, LiteralValue::Boolean(false));
     }
 }
