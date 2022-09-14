@@ -2,7 +2,13 @@ use crate::prelude::*;
 
 pub struct Interpreter;
 
-pub enum RuntimeError {}
+pub enum RuntimeError {
+    InvalidOperand {
+        token: Token,
+        operand: LiteralValue,
+        msg: &'static str,
+    },
+}
 
 type InterpreterResult = Result<LiteralValue, RuntimeError>;
 
@@ -32,17 +38,23 @@ impl Interpreter {
 
     fn visit_unary(&self, operator: &Token, right: &Expr) -> InterpreterResult {
         let value = self.visit(right)?;
-
-        if operator.token_type == TokenType::Minus {
-            if let LiteralValue::Number(n) = value {
-                return Ok(LiteralValue::Number(-n));
+        match operator.token_type {
+            TokenType::Minus => {
+                if let LiteralValue::Number(n) = value {
+                    Ok(LiteralValue::Number(-n))
+                } else {
+                    Err(RuntimeError::InvalidOperand {
+                        token: operator.clone(),
+                        operand: value,
+                        msg: "Operand must be a number",
+                    })
+                }
             }
-        } else if operator.token_type == TokenType::Bang {
-            return Ok(LiteralValue::Boolean(!self.is_truthy(&value)));
-        }
+            TokenType::Bang => Ok(LiteralValue::Boolean(!self.is_truthy(&value))),
 
-        // Unreachable code. We don't any unary expression except the ones above.
-        Ok(LiteralValue::Null)
+            // Unreachable code. We don't have any unary expression except the ones above.
+            _ => Ok(LiteralValue::Null),
+        }
     }
 
     fn visit_binary(&self, left: &Expr, operator: &Token, right: &Expr) -> InterpreterResult {
