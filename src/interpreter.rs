@@ -3,11 +3,7 @@ use crate::prelude::*;
 pub struct Interpreter;
 
 pub enum RuntimeError {
-    InvalidOperand {
-        token: Token,
-        operand: LiteralValue,
-        msg: &'static str,
-    },
+    InvalidOperand { operator: Token, msg: &'static str },
 }
 
 type InterpreterResult = Result<LiteralValue, RuntimeError>;
@@ -44,8 +40,7 @@ impl Interpreter {
                     Ok(LiteralValue::Number(-n))
                 } else {
                     Err(RuntimeError::InvalidOperand {
-                        token: operator.clone(),
-                        operand: value,
+                        operator: operator.clone(),
                         msg: "Operand must be a number",
                     })
                 }
@@ -58,39 +53,65 @@ impl Interpreter {
     }
 
     fn visit_binary(&self, left: &Expr, operator: &Token, right: &Expr) -> InterpreterResult {
-        // Both operands are numbers
         let left_value = self.visit(left)?;
         let right_value = self.visit(right)?;
 
-        if let (Some(l), Some(r)) = (left_value.number(), right_value.number()) {
-            match operator.token_type {
-                TokenType::Minus => return Ok(LiteralValue::Number(l - r)),
-                TokenType::Plus => return Ok(LiteralValue::Number(l + r)),
-                TokenType::Star => return Ok(LiteralValue::Number(l * r)),
-                TokenType::Slash => return Ok(LiteralValue::Number(l / r)),
-                TokenType::Greater => return Ok(LiteralValue::Boolean(l > r)),
-                TokenType::GreaterEqual => return Ok(LiteralValue::Boolean(l >= r)),
-                TokenType::Less => return Ok(LiteralValue::Boolean(l < r)),
-                TokenType::LessEqual => return Ok(LiteralValue::Boolean(l <= r)),
-                _ => {}
+        match operator.token_type {
+            TokenType::Plus => {
+                if let (Some(l), Some(r)) = (left_value.number(), right_value.number()) {
+                    Ok(LiteralValue::Number(l + r))
+                } else if let (Some(l), Some(r)) = (left_value.string(), right_value.string()) {
+                    Ok(LiteralValue::String(format!("{}{}", l, r)))
+                } else {
+                    Err(RuntimeError::InvalidOperand {
+                        operator: operator.clone(),
+                        msg: "Operands must be two numbers or two strings",
+                    })
+                }
             }
-        }
+            TokenType::Minus => self
+                .check_number_operands(operator, &left_value, &right_value)
+                .map(|(l, r)| LiteralValue::Number(l - r)),
+            TokenType::Star => self
+                .check_number_operands(operator, &left_value, &right_value)
+                .map(|(l, r)| LiteralValue::Number(l * r)),
+            TokenType::Slash => self
+                .check_number_operands(operator, &left_value, &right_value)
+                .map(|(l, r)| LiteralValue::Number(l / r)),
+            TokenType::Greater => self
+                .check_number_operands(operator, &left_value, &right_value)
+                .map(|(l, r)| LiteralValue::Boolean(l > r)),
+            TokenType::GreaterEqual => self
+                .check_number_operands(operator, &left_value, &right_value)
+                .map(|(l, r)| LiteralValue::Boolean(l >= r)),
+            TokenType::Less => self
+                .check_number_operands(operator, &left_value, &right_value)
+                .map(|(l, r)| LiteralValue::Boolean(l < r)),
+            TokenType::LessEqual => self
+                .check_number_operands(operator, &left_value, &right_value)
+                .map(|(l, r)| LiteralValue::Boolean(l <= r)),
 
-        // Both operands are strings
-        if let (Some(l), Some(r)) = (left_value.string(), right_value.string()) {
-            if operator.token_type == TokenType::Plus {
-                return Ok(LiteralValue::String(format!("{}{}", l, r)));
-            }
-        }
+            TokenType::EqualEqual => Ok(LiteralValue::Boolean(left_value == right_value)),
+            TokenType::BangEqual => Ok(LiteralValue::Boolean(left_value != right_value)),
 
-        if operator.token_type == TokenType::EqualEqual {
-            return Ok(LiteralValue::Boolean(left_value == right_value));
+            // Unreachable code
+            _ => Ok(LiteralValue::Null),
         }
-        if operator.token_type == TokenType::BangEqual {
-            return Ok(LiteralValue::Boolean(left_value != right_value));
-        }
+    }
 
-        // Unreachable code
-        Ok(LiteralValue::Null)
+    fn check_number_operands(
+        &self,
+        operator: &Token,
+        left: &LiteralValue,
+        right: &LiteralValue,
+    ) -> Result<(f64, f64), RuntimeError> {
+        if let (Some(l), Some(r)) = (left.number(), right.number()) {
+            Ok((l, r))
+        } else {
+            Err(RuntimeError::InvalidOperand {
+                operator: operator.clone(),
+                msg: "Operands must be numbers",
+            })
+        }
     }
 }
