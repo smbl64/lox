@@ -37,6 +37,9 @@ impl Visitor<LiteralValue, RuntimeError> for Interpreter {
 }
 
 impl Interpreter {
+    pub fn new() -> Self {
+        Self {}
+    }
     pub fn interpret(&self, expression: &Expr) {
         match self.visit(expression) {
             Ok(v) => println!("{}", v),
