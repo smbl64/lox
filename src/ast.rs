@@ -3,8 +3,10 @@ use crate::{
     token::{LiteralValue, Token, TokenType},
 };
 
-pub trait Visitor<R, E> {
-    fn visit(&self, expr: &Expr) -> Result<R, E>;
+pub trait Visitor<I> {
+    type Result;
+    type Error;
+    fn visit(&self, input: &I) -> Result<Self::Result, Self::Error>;
 }
 
 #[derive(Debug)]
@@ -42,7 +44,10 @@ impl Expr {
 
 pub struct AstPrinter;
 
-impl Visitor<String, ()> for AstPrinter {
+impl Visitor<Expr> for AstPrinter {
+    type Result = String;
+    type Error = ();
+
     fn visit(&self, expr: &Expr) -> Result<String, ()> {
         let s = match expr {
             Expr::Binary {

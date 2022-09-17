@@ -21,11 +21,14 @@ impl Display for RuntimeError {
 
 type InterpreterResult = Result<LiteralValue, RuntimeError>;
 
-impl Visitor<LiteralValue, RuntimeError> for Interpreter {
+impl Visitor<Expr> for Interpreter {
+    type Result = LiteralValue;
+    type Error = RuntimeError;
+
     fn visit(&self, expr: &Expr) -> InterpreterResult {
         match expr {
             Expr::Literal { value } => Ok(value.clone()),
-            Expr::Grouping { expr: inner } => self.visit(inner),
+            Expr::Grouping { expr: inner } => self.visit(inner.as_ref()),
             Expr::Unary { operator, right } => self.visit_unary(operator, right),
             Expr::Binary {
                 left,
@@ -36,15 +39,42 @@ impl Visitor<LiteralValue, RuntimeError> for Interpreter {
     }
 }
 
+impl Visitor<Stmt> for Interpreter {
+    type Result = ();
+    type Error = RuntimeError;
+
+    fn visit(&self, stmt: &Stmt) -> Result<(), RuntimeError> {
+        match stmt {
+            Stmt::Expression { expr } => self.evaluate(expr)?,
+            Stmt::Print { expr } => {
+                let value = self.evaluate(expr)?;
+                println!("{}", value);
+                value
+            }
+        };
+        Ok(())
+    }
+}
+
 impl Interpreter {
     pub fn new() -> Self {
         Self {}
     }
-    pub fn interpret(&self, expression: &Expr) {
-        match self.visit(expression) {
-            Ok(v) => println!("{}", v),
-            Err(e) => runtime_error(e),
-        };
+    pub fn interpret(&self, statements: &[Stmt]) {
+        for stmt in statements {
+            match self.execute(&stmt) {
+                Err(e) => runtime_error(e),
+                Ok(()) => {}
+            }
+        }
+        //match self.visit(expression) {
+        //    Ok(v) => println!("{}", v),
+        //    Err(e) => runtime_error(e),
+        //};
+    }
+
+    pub fn execute(&self, stmt: &Stmt) -> Result<(), RuntimeError> {
+        Ok(())
     }
 
     pub fn evaluate(&self, expression: &Expr) -> InterpreterResult {
