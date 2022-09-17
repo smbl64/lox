@@ -215,7 +215,6 @@ impl Parser {
                     .expect("expecting a number or string here"),
             });
         }
-
         if self.match_tt(&[TokenType::LeftParen]) {
             let expr = self.expression()?;
             self.consume(TokenType::RightParen, "Expect ')' after expression.")?;
