@@ -52,7 +52,7 @@ impl Scanner {
             '.' => self.add_token(TokenType::Dot),
             '-' => self.add_token(TokenType::Minus),
             '+' => self.add_token(TokenType::Plus),
-            ';' => self.add_token(TokenType::Semicolor),
+            ';' => self.add_token(TokenType::Semicolon),
             '*' => self.add_token(TokenType::Star),
             '!' => {
                 let token_type = if self.match_next('=') {

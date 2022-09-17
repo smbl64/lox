@@ -12,10 +12,11 @@ pub mod prelude {
 
 use std::io::Write;
 
-use prelude::{AstPrinter, Interpreter, Parser, RuntimeError, Visitor};
+use prelude::{Interpreter, Parser, RuntimeError};
 
 static mut LOX: Lox = Lox::new();
 
+// TODO: get rid of this!
 pub fn get_lox() -> &'static mut Lox {
     unsafe {
         return &mut LOX;

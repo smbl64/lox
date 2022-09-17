@@ -75,8 +75,33 @@ impl Parser {
         Self { tokens, current: 0 }
     }
 
-    pub fn parse(&mut self) -> Option<Expr> {
-        self.expression()
+    pub fn parse(&mut self) -> Option<Vec<Stmt>> {
+        let mut statements = vec![];
+        while !self.is_at_end() {
+            statements.push(self.statement()?);
+        }
+
+        Some(statements)
+    }
+
+    fn statement(&mut self) -> Option<Stmt> {
+        if self.match_tt(&[TokenType::Print]) {
+            self.print_statement()
+        } else {
+            self.expression_statement()
+        }
+    }
+
+    fn print_statement(&mut self) -> Option<Stmt> {
+        let expr = self.expression()?;
+        self.consume(TokenType::Semicolon, "Expect ';' after expression");
+        Some(Stmt::Print { expr })
+    }
+
+    fn expression_statement(&mut self) -> Option<Stmt> {
+        let expr = self.expression()?;
+        self.consume(TokenType::Semicolon, "Expect ';' after expression");
+        Some(Stmt::Expression { expr })
     }
 
     fn expression(&mut self) -> Option<Expr> {
@@ -258,7 +283,7 @@ impl Parser {
 
         // Move and discard tokens until we find a statement boundary
         while !self.is_at_end() {
-            if self.previous().token_type == TokenType::Semicolor {
+            if self.previous().token_type == TokenType::Semicolon {
                 return;
             }
 
@@ -277,6 +302,12 @@ impl Parser {
             self.advance();
         }
     }
+}
+
+#[derive(Debug)]
+pub enum Stmt {
+    Print { expr: Expr },
+    Expression { expr: Expr },
 }
 
 #[cfg(test)]

@@ -12,7 +12,7 @@ pub enum TokenType {
     Dot,
     Minus,
     Plus,
-    Semicolor,
+    Semicolon,
     Slash,
     Star,
 
