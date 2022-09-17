@@ -64,17 +64,13 @@ impl Interpreter {
         for stmt in statements {
             match self.execute(&stmt) {
                 Err(e) => runtime_error(e),
-                Ok(()) => {}
+                _ => {}
             }
         }
-        //match self.visit(expression) {
-        //    Ok(v) => println!("{}", v),
-        //    Err(e) => runtime_error(e),
-        //};
     }
 
     pub fn execute(&self, stmt: &Stmt) -> Result<(), RuntimeError> {
-        Ok(())
+        self.visit(stmt)
     }
 
     pub fn evaluate(&self, expression: &Expr) -> InterpreterResult {
