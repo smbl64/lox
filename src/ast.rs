@@ -75,7 +75,7 @@ impl Visitor<Expr> for AstPrinter {
 pub enum Stmt {
     Print { expr: Expr },
     Expression { expr: Expr },
-    Var { name: Token, initializer: Expr },
+    Var { name: Token, initializer: Option<Expr> },
 }
 
 #[cfg(test)]

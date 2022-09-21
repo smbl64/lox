@@ -14,10 +14,42 @@ impl Parser {
     pub fn parse(&mut self) -> Option<Vec<Stmt>> {
         let mut statements = vec![];
         while !self.is_at_end() {
-            statements.push(self.statement()?);
+            statements.push(self.declaration()?);
         }
 
         Some(statements)
+    }
+
+    fn declaration(&mut self) -> Option<Stmt> {
+        let result = if self.match_tt(&[TokenType::Var]) {
+            self.var_declaration()
+        } else {
+            self.statement()
+        };
+
+        if result.is_none() {
+            self.synchronize();
+            return None;
+        }
+
+        result
+    }
+
+    fn var_declaration(&mut self) -> Option<Stmt> {
+        let name = self.consume(TokenType::Identifier, "Expect variable name")?;
+
+        let initializer = if self.match_tt(&[TokenType::Equal]) {
+            Some(self.expression()?)
+        } else {
+            None
+        };
+
+        self.consume(
+            TokenType::Semicolon,
+            "Expect ';' after variable declaration",
+        )?;
+
+        Some(Stmt::Var { name, initializer })
     }
 
     fn statement(&mut self) -> Option<Stmt> {
@@ -144,6 +176,11 @@ impl Parser {
                     .previous()
                     .literal
                     .expect("expecting a number or string here"),
+            });
+        }
+        if self.match_tt(&[TokenType::Equal]) {
+            return Some(Expr::Variable {
+                name: self.previous(),
             });
         }
         if self.match_tt(&[TokenType::LeftParen]) {
