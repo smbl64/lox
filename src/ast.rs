@@ -68,6 +68,7 @@ impl Visitor<Expr> for AstPrinter {
             Expr::Unary { operator, right } => {
                 format!("({} {})", operator.lexeme, self.visit(right)?)
             }
+            Expr::Variable { name } => format!("{}", name),
         };
         Ok(s)
     }
