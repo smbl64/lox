@@ -26,6 +26,9 @@ pub enum Expr {
         operator: Token,
         right: Box<Expr>,
     },
+    Variable {
+        name: Token,
+    },
 }
 
 impl Expr {
@@ -312,6 +315,7 @@ impl Parser {
 pub enum Stmt {
     Print { expr: Expr },
     Expression { expr: Expr },
+    Var { name: Token, initializer: Expr },
 }
 
 #[cfg(test)]
