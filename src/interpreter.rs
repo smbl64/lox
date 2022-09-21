@@ -35,6 +35,7 @@ impl Visitor<Expr> for Interpreter {
                 operator,
                 right,
             } => self.visit_binary(left, operator, right),
+            Expr::Variable { name } => todo!(),
         }
     }
 }
@@ -51,6 +52,7 @@ impl Visitor<Stmt> for Interpreter {
                 println!("{}", value);
                 value
             }
+            Stmt::Var { name, initializer } => todo!(),
         };
         Ok(())
     }
@@ -177,7 +179,16 @@ mod tests {
         let mut scanner = Scanner::new(source);
         let tokens = scanner.scan_tokens();
         let mut parser = Parser::new(tokens);
-        parser.parse().expect("failed to parse the source")
+        let stmt = parser
+            .parse()
+            .expect("failed to parse the source")
+            .pop()
+            .expect("no statement was created");
+
+        match stmt {
+            Stmt::Expression { expr } => expr,
+            _ => panic!("statement is not an expression"),
+        }
     }
 
     macro_rules! assert_literal {

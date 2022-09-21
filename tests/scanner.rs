@@ -1,4 +1,4 @@
-use rlox::prelude::Scanner;
+use lox::prelude::Scanner;
 
 #[test]
 fn scanner_works() {
