@@ -1,12 +1,32 @@
-use std::fmt::Display;
+use std::{collections::HashMap, fmt::Display};
 
 use crate::{prelude::*, runtime_error};
+
+#[derive(Debug)]
+pub struct Environment {
+    values: HashMap<String, LiteralValue>,
+}
+
+impl Environment {
+    pub fn define(&mut self, name: &str, value: LiteralValue) {
+        self.values.insert(name.to_owned(), value);
+    }
+
+    pub fn get(&self, name: &Token) -> Result<LiteralValue, RuntimeError> {
+        let value = self.values.get(&name.lexeme).map(|lit| lit.to_owned());
+        value.ok_or_else(move || RuntimeError::UndefinedVariable {
+            name: name.clone(),
+            msg: format!("Undefined variable '{}'", name.lexeme),
+        })
+    }
+}
 
 pub struct Interpreter;
 
 #[derive(Debug, PartialEq)]
 pub enum RuntimeError {
-    InvalidOperand { operator: Token, msg: &'static str },
+    InvalidOperand { operator: Token, msg: String },
+    UndefinedVariable { name: Token, msg: String },
 }
 
 impl Display for RuntimeError {
@@ -14,6 +34,9 @@ impl Display for RuntimeError {
         match self {
             RuntimeError::InvalidOperand { operator, msg } => {
                 write!(f, "{}\n[line {}]", msg, operator.line)
+            }
+            RuntimeError::UndefinedVariable { name, msg } => {
+                write!(f, "{}\n[line {}]", msg, name.line)
             }
         }
     }
@@ -96,7 +119,7 @@ impl Interpreter {
                 } else {
                     Err(RuntimeError::InvalidOperand {
                         operator: operator.clone(),
-                        msg: "Operand must be a number",
+                        msg: "Operand must be a number".to_owned(),
                     })
                 }
             }
@@ -120,7 +143,7 @@ impl Interpreter {
                 } else {
                     Err(RuntimeError::InvalidOperand {
                         operator: operator.clone(),
-                        msg: "Operands must be two numbers or two strings",
+                        msg: "Operands must be two numbers or two strings".to_owned(),
                     })
                 }
             }
@@ -165,7 +188,7 @@ impl Interpreter {
         } else {
             Err(RuntimeError::InvalidOperand {
                 operator: operator.clone(),
-                msg: "Operands must be numbers",
+                msg: "Operands must be numbers".to_owned(),
             })
         }
     }
