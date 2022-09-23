@@ -3,7 +3,7 @@ use crate::token::{LiteralValue, Token};
 pub trait Visitor<I> {
     type Result;
     type Error;
-    fn visit(&self, input: &I) -> Result<Self::Result, Self::Error>;
+    fn visit(&mut self, input: &I) -> Result<Self::Result, Self::Error>;
 }
 
 #[derive(Debug)]
@@ -48,7 +48,7 @@ impl Visitor<Expr> for AstPrinter {
     type Result = String;
     type Error = ();
 
-    fn visit(&self, expr: &Expr) -> Result<String, ()> {
+    fn visit(&mut self, expr: &Expr) -> Result<String, ()> {
         let s = match expr {
             Expr::Binary {
                 left,
@@ -73,9 +73,16 @@ impl Visitor<Expr> for AstPrinter {
 
 #[derive(Debug)]
 pub enum Stmt {
-    Print { expr: Expr },
-    Expression { expr: Expr },
-    Var { name: Token, initializer: Option<Expr> },
+    Print {
+        expr: Expr,
+    },
+    Expression {
+        expr: Expr,
+    },
+    Var {
+        name: Token,
+        initializer: Option<Expr>,
+    },
 }
 
 #[cfg(test)]

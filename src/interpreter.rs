@@ -8,6 +8,11 @@ pub struct Environment {
 }
 
 impl Environment {
+    pub fn new() -> Self {
+        Self {
+            values: HashMap::new(),
+        }
+    }
     pub fn define(&mut self, name: &str, value: LiteralValue) {
         self.values.insert(name.to_owned(), value);
     }
@@ -21,7 +26,9 @@ impl Environment {
     }
 }
 
-pub struct Interpreter;
+pub struct Interpreter {
+    environment: Environment,
+}
 
 #[derive(Debug, PartialEq)]
 pub enum RuntimeError {
@@ -48,7 +55,7 @@ impl Visitor<Expr> for Interpreter {
     type Result = LiteralValue;
     type Error = RuntimeError;
 
-    fn visit(&self, expr: &Expr) -> InterpreterResult {
+    fn visit(&mut self, expr: &Expr) -> InterpreterResult {
         match expr {
             Expr::Literal { value } => Ok(value.clone()),
             Expr::Grouping { expr: inner } => self.visit(inner.as_ref()),
@@ -58,7 +65,7 @@ impl Visitor<Expr> for Interpreter {
                 operator,
                 right,
             } => self.visit_binary(left, operator, right),
-            Expr::Variable { name } => todo!(),
+            Expr::Variable { name } => self.environment.get(name),
         }
     }
 }
@@ -67,7 +74,7 @@ impl Visitor<Stmt> for Interpreter {
     type Result = ();
     type Error = RuntimeError;
 
-    fn visit(&self, stmt: &Stmt) -> Result<(), RuntimeError> {
+    fn visit(&mut self, stmt: &Stmt) -> Result<(), RuntimeError> {
         match stmt {
             Stmt::Expression { expr } => self.evaluate(expr)?,
             Stmt::Print { expr } => {
@@ -75,7 +82,16 @@ impl Visitor<Stmt> for Interpreter {
                 println!("{}", value);
                 value
             }
-            Stmt::Var { name, initializer } => todo!(),
+            Stmt::Var { name, initializer } => {
+                let value = if let Some(expr) = initializer {
+                    self.evaluate(expr)?
+                } else {
+                    LiteralValue::Null
+                };
+
+                self.environment.define(&name.lexeme, value);
+                LiteralValue::Null
+            }
         };
         Ok(())
     }
@@ -83,9 +99,11 @@ impl Visitor<Stmt> for Interpreter {
 
 impl Interpreter {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            environment: Environment::new(),
+        }
     }
-    pub fn interpret(&self, statements: &[Stmt]) {
+    pub fn interpret(&mut self, statements: &[Stmt]) {
         for stmt in statements {
             match self.execute(&stmt) {
                 Err(e) => runtime_error(e),
@@ -94,11 +112,11 @@ impl Interpreter {
         }
     }
 
-    pub fn execute(&self, stmt: &Stmt) -> Result<(), RuntimeError> {
+    pub fn execute(&mut self, stmt: &Stmt) -> Result<(), RuntimeError> {
         self.visit(stmt)
     }
 
-    pub fn evaluate(&self, expression: &Expr) -> InterpreterResult {
+    pub fn evaluate(&mut self, expression: &Expr) -> InterpreterResult {
         self.visit(expression)
     }
 
@@ -110,7 +128,7 @@ impl Interpreter {
         }
     }
 
-    fn visit_unary(&self, operator: &Token, right: &Expr) -> InterpreterResult {
+    fn visit_unary(&mut self, operator: &Token, right: &Expr) -> InterpreterResult {
         let value = self.visit(right)?;
         match operator.token_type {
             TokenType::Minus => {
@@ -130,7 +148,7 @@ impl Interpreter {
         }
     }
 
-    fn visit_binary(&self, left: &Expr, operator: &Token, right: &Expr) -> InterpreterResult {
+    fn visit_binary(&mut self, left: &Expr, operator: &Token, right: &Expr) -> InterpreterResult {
         let left_value = self.visit(left)?;
         let right_value = self.visit(right)?;
 
