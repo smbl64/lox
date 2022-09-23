@@ -105,7 +105,7 @@ mod tests {
             }),
         };
 
-        let printer = AstPrinter;
+        let mut printer = AstPrinter;
         let res = printer.visit(&expr);
         assert!(res.is_ok());
         let res = res.unwrap();

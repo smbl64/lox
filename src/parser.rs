@@ -191,7 +191,7 @@ impl Parser {
             });
         }
 
-        self.error(self.peek(), "Expect expression.");
+        self.error(self.peek().clone(), "Expect expression.");
         None
     }
 
@@ -200,7 +200,7 @@ impl Parser {
             return Some(self.advance());
         }
 
-        self.error(self.peek(), message);
+        self.error(self.peek().clone(), message);
         None
     }
 
@@ -242,8 +242,8 @@ impl Parser {
         self.peek().token_type == TokenType::EOF
     }
 
-    fn peek(&self) -> Token {
-        self.tokens.get(self.current).unwrap().clone()
+    fn peek(&self) -> &Token {
+        self.tokens.get(self.current).unwrap()
     }
 
     fn previous(&mut self) -> Token {

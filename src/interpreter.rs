@@ -234,7 +234,7 @@ mod tests {
 
     macro_rules! assert_literal {
         ($source:literal, $expected:expr, $lit_type:path) => {
-            let ipr = Interpreter {};
+            let mut ipr = Interpreter::new();
             let expr = make_expression($source);
             let res = ipr.evaluate(&expr);
             assert!(res.is_ok());
