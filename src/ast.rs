@@ -26,6 +26,10 @@ pub enum Expr {
     Variable {
         name: Token,
     },
+    Assignment {
+        name: Token,
+        value: Box<Expr>,
+    },
 }
 
 impl Expr {
@@ -66,6 +70,7 @@ impl Visitor<Expr> for AstPrinter {
                 format!("({} {})", operator.lexeme, self.visit(right)?)
             }
             Expr::Variable { name } => format!("{}", name),
+            Expr::Assignment { name, value } => format!("{} = {}", name, self.visit(value)?),
         };
         Ok(s)
     }

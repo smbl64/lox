@@ -13,8 +13,21 @@ impl Environment {
             values: HashMap::new(),
         }
     }
+
     pub fn define(&mut self, name: &str, value: LiteralValue) {
         self.values.insert(name.to_owned(), value);
+    }
+
+    pub fn assign(&mut self, name: &Token, value: LiteralValue) -> Result<(), RuntimeError> {
+        if !self.values.contains_key(&name.lexeme) {
+            return Err(RuntimeError::UndefinedVariable {
+                name: name.clone(),
+                msg: format!("Undefined variable '{}'", name.lexeme),
+            });
+        }
+
+        self.values.insert(name.lexeme.clone(), value);
+        Ok(())
     }
 
     pub fn get(&self, name: &Token) -> Result<LiteralValue, RuntimeError> {
@@ -66,6 +79,11 @@ impl Visitor<Expr> for Interpreter {
                 right,
             } => self.visit_binary(left, operator, right),
             Expr::Variable { name } => self.environment.get(name),
+            Expr::Assignment { name, value } => {
+                let value = self.visit(value.as_ref())?;
+                self.environment.assign(&name, value.clone())?;
+                Ok(value)
+            }
         }
     }
 }
