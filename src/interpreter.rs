@@ -4,13 +4,19 @@ use crate::{prelude::*, runtime_error};
 
 #[derive(Debug)]
 pub struct Environment {
+    enclosing: Option<Box<Environment>>,
     values: HashMap<String, LiteralValue>,
 }
 
 impl Environment {
     pub fn new() -> Self {
+        Self::with_enclosing(None)
+    }
+
+    pub fn with_enclosing(enclosing: Option<Box<Environment>>) -> Self {
         Self {
             values: HashMap::new(),
+            enclosing,
         }
     }
 
@@ -20,6 +26,11 @@ impl Environment {
 
     pub fn assign(&mut self, name: &Token, value: LiteralValue) -> Result<(), RuntimeError> {
         if !self.values.contains_key(&name.lexeme) {
+            // Ask one level above if possible
+            if let Some(ref mut e) = self.enclosing {
+                return e.assign(name, value);
+            }
+
             return Err(RuntimeError::UndefinedVariable {
                 name: name.clone(),
                 msg: format!("Undefined variable '{}'", name.lexeme),
@@ -32,6 +43,11 @@ impl Environment {
 
     pub fn get(&self, name: &Token) -> Result<LiteralValue, RuntimeError> {
         let value = self.values.get(&name.lexeme).map(|lit| lit.to_owned());
+        // Ask one level above if possible
+        if value.is_none() && self.enclosing.is_some() {
+            return self.enclosing.as_ref().unwrap().get(name);
+        }
+
         value.ok_or_else(move || RuntimeError::UndefinedVariable {
             name: name.clone(),
             msg: format!("Undefined variable '{}'", name.lexeme),
