@@ -1,10 +1,11 @@
-use std::{collections::HashMap, fmt::Display};
+use std::cell::RefCell;
+use std::{collections::HashMap, fmt::Display, rc::Rc};
 
 use crate::{prelude::*, runtime_error};
 
 #[derive(Debug)]
 pub struct Environment {
-    enclosing: Option<Box<Environment>>,
+    enclosing: Option<Rc<RefCell<Environment>>>,
     values: HashMap<String, LiteralValue>,
 }
 
@@ -13,7 +14,7 @@ impl Environment {
         Self::with_enclosing(None)
     }
 
-    pub fn with_enclosing(enclosing: Option<Box<Environment>>) -> Self {
+    pub fn with_enclosing(enclosing: Option<Rc<RefCell<Environment>>>) -> Self {
         Self {
             values: HashMap::new(),
             enclosing,
@@ -27,8 +28,8 @@ impl Environment {
     pub fn assign(&mut self, name: &Token, value: LiteralValue) -> Result<(), RuntimeError> {
         if !self.values.contains_key(&name.lexeme) {
             // Ask one level above if possible
-            if let Some(ref mut e) = self.enclosing {
-                return e.assign(name, value);
+            if let Some(ref e) = self.enclosing {
+                return e.borrow_mut().assign(name, value);
             }
 
             return Err(RuntimeError::UndefinedVariable {
@@ -45,7 +46,10 @@ impl Environment {
         let value = self.values.get(&name.lexeme).map(|lit| lit.to_owned());
         // Ask one level above if possible
         if value.is_none() && self.enclosing.is_some() {
-            return self.enclosing.as_ref().unwrap().get(name);
+            let rc = self.enclosing.as_ref().unwrap();
+            return rc.borrow_mut().get(name);
+
+            //return self.enclosing.as_ref().unwrap().get(name);
         }
 
         value.ok_or_else(move || RuntimeError::UndefinedVariable {
@@ -56,7 +60,7 @@ impl Environment {
 }
 
 pub struct Interpreter {
-    environment: Environment,
+    environment: Rc<RefCell<Environment>>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -94,10 +98,10 @@ impl Visitor<Expr> for Interpreter {
                 operator,
                 right,
             } => self.visit_binary(left, operator, right),
-            Expr::Variable { name } => self.environment.get(name),
+            Expr::Variable { name } => self.environment.borrow().get(name),
             Expr::Assignment { name, value } => {
                 let value = self.visit(value.as_ref())?;
-                self.environment.assign(&name, value.clone())?;
+                self.environment.borrow_mut().assign(&name, value.clone())?;
                 Ok(value)
             }
         }
@@ -123,7 +127,22 @@ impl Visitor<Stmt> for Interpreter {
                     LiteralValue::Null
                 };
 
-                self.environment.define(&name.lexeme, value);
+                self.environment.borrow_mut().define(&name.lexeme, value);
+                LiteralValue::Null
+            }
+            Stmt::Block { statements } => {
+                let prev_env = self.environment.clone();
+
+                // Create a new environment for executing the block
+                let new_env = Environment::with_enclosing(Some(self.environment.clone()));
+                self.environment = Rc::new(RefCell::new(new_env));
+
+                let result = self.execute_block(statements);
+
+                // Restore the original environment
+                self.environment = prev_env;
+
+                result?;
                 LiteralValue::Null
             }
         };
@@ -134,7 +153,7 @@ impl Visitor<Stmt> for Interpreter {
 impl Interpreter {
     pub fn new() -> Self {
         Self {
-            environment: Environment::new(),
+            environment: Rc::new(RefCell::new(Environment::new())),
         }
     }
     pub fn interpret(&mut self, statements: &[Stmt]) {
@@ -148,6 +167,14 @@ impl Interpreter {
 
     pub fn execute(&mut self, stmt: &Stmt) -> Result<(), RuntimeError> {
         self.visit(stmt)
+    }
+
+    fn execute_block(&mut self, statements: &[Stmt]) -> Result<(), RuntimeError> {
+        for s in statements {
+            self.execute(s)?;
+        }
+
+        Ok(())
     }
 
     pub fn evaluate(&mut self, expression: &Expr) -> InterpreterResult {
@@ -296,73 +323,73 @@ mod tests {
 
     #[test]
     fn unary_minus() {
-        assert_number!("-3.14", -3.14);
+        assert_number!("-3.14;", -3.14);
     }
 
     #[test]
     fn unary_bang() {
-        assert_boolean!("!true", false);
-        assert_boolean!("!false", true);
+        assert_boolean!("!true;", false);
+        assert_boolean!("!false;", true);
     }
 
     #[test]
     fn binary_plus_numbers() {
-        assert_number!("10 + 20", 30.0);
+        assert_number!("10 + 20;", 30.0);
     }
 
     #[test]
     fn binary_plus_strings() {
-        assert_string!(r#" "Hello " + "World!" "#, "Hello World!".to_string());
+        assert_string!(r#" "Hello " + "World!"; "#, "Hello World!".to_string());
     }
 
     #[test]
     fn binary_minus() {
-        assert_number!("10 - 20", -10.0);
+        assert_number!("10 - 20;", -10.0);
     }
 
     #[test]
     fn binary_star() {
-        assert_number!("10 * 20", 200.0);
+        assert_number!("10 * 20;", 200.0);
     }
 
     #[test]
     fn binary_slash() {
-        assert_number!("10 / 20", 0.5);
+        assert_number!("10 / 20;", 0.5);
     }
 
     #[test]
     fn binary_greater() {
-        assert_boolean!("10 > 20", false);
-        assert_boolean!("20 > 10", true);
+        assert_boolean!("10 > 20;", false);
+        assert_boolean!("20 > 10;", true);
     }
 
     #[test]
     fn binary_greater_equal() {
-        assert_boolean!("10 >= 20", false);
-        assert_boolean!("20 >= 10", true);
+        assert_boolean!("10 >= 20;", false);
+        assert_boolean!("20 >= 10;", true);
     }
 
     #[test]
     fn binary_less() {
-        assert_boolean!("10 < 20", true);
-        assert_boolean!("20 < 10", false);
+        assert_boolean!("10 < 20;", true);
+        assert_boolean!("20 < 10;", false);
     }
 
     #[test]
     fn binary_less_equal() {
-        assert_boolean!("10 <= 20", true);
-        assert_boolean!("20 <= 10", false);
+        assert_boolean!("10 <= 20;", true);
+        assert_boolean!("20 <= 10;", false);
     }
 
     #[test]
     fn binary_equal_equal() {
-        assert_boolean!("10 == 20", false);
-        assert_boolean!("10 == 10", true);
+        assert_boolean!("10 == 20;", false);
+        assert_boolean!("10 == 10;", true);
     }
 
     #[test]
     fn binary_bang_equal() {
-        assert_boolean!("10 != 20", true);
-        assert_boolean!("10 != 10", false);
+        assert_boolean!("10 != 20;", true);
+        assert_boolean!("10 != 10;", false);
     }
 }
