@@ -51,6 +51,28 @@ impl Expr {
     }
 }
 
+#[derive(Debug)]
+pub enum Stmt {
+    Print {
+        expr: Expr,
+    },
+    Expression {
+        expr: Expr,
+    },
+    Var {
+        name: Token,
+        initializer: Option<Expr>,
+    },
+    Block {
+        statements: Vec<Stmt>,
+    },
+    If {
+        condition: Expr,
+        then_branch: Box<Stmt>,
+        else_branch: Option<Box<Stmt>>,
+    },
+}
+
 pub struct AstPrinter;
 
 impl Visitor<Expr> for AstPrinter {
@@ -89,28 +111,6 @@ impl Visitor<Expr> for AstPrinter {
         };
         Ok(s)
     }
-}
-
-#[derive(Debug)]
-pub enum Stmt {
-    Print {
-        expr: Expr,
-    },
-    Expression {
-        expr: Expr,
-    },
-    Var {
-        name: Token,
-        initializer: Option<Expr>,
-    },
-    Block {
-        statements: Vec<Stmt>,
-    },
-    If {
-        condition: Expr,
-        then_branch: Box<Stmt>,
-        else_branch: Option<Box<Stmt>>,
-    },
 }
 
 #[cfg(test)]
