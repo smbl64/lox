@@ -44,6 +44,8 @@ impl Parser {
             None
         };
 
+        dbg!(&initializer);
+
         self.consume(
             TokenType::Semicolon,
             "Expect ';' after variable declaration",
@@ -305,7 +307,12 @@ impl Parser {
     }
 
     fn unary(&mut self) -> Option<Expr> {
-        if self.match_tt(&[TokenType::Bang, TokenType::Minus]) {
+        if self.match_tt(&[
+            TokenType::Bang,
+            TokenType::Minus,
+            TokenType::MinusMinus,
+            TokenType::PlusPlus,
+        ]) {
             let operator = self.previous();
             let right = self.unary()?;
             return Some(Expr::Unary {

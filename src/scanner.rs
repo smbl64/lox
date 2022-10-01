@@ -50,10 +50,24 @@ impl Scanner {
             '}' => self.add_token(TokenType::RightBrace),
             ',' => self.add_token(TokenType::Comma),
             '.' => self.add_token(TokenType::Dot),
-            '-' => self.add_token(TokenType::Minus),
-            '+' => self.add_token(TokenType::Plus),
             ';' => self.add_token(TokenType::Semicolon),
             '*' => self.add_token(TokenType::Star),
+            '-' => {
+                let token_type = if self.match_next('-') {
+                    TokenType::MinusMinus
+                } else {
+                    TokenType::Minus
+                };
+                self.add_token(token_type);
+            }
+            '+' => {
+                let token_type = if self.match_next('+') {
+                    TokenType::PlusPlus
+                } else {
+                    TokenType::Plus
+                };
+                self.add_token(token_type);
+            }
             '!' => {
                 let token_type = if self.match_next('=') {
                     TokenType::BangEqual
