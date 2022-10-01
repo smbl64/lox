@@ -102,6 +102,26 @@ impl Visitor<Expr> for Interpreter {
                 self.environment.borrow_mut().assign(name, value.clone())?;
                 Ok(value)
             }
+            Expr::Logical {
+                left,
+                operator,
+                right,
+            } => {
+                let left_val = self.evaluate(left)?;
+
+                if operator.token_type == TokenType::Or {
+                    if self.is_truthy(&left_val) {
+                        return Ok(left_val);
+                    }
+                } else {
+                    // TokenType::And
+                    if !self.is_truthy(&left_val) {
+                        return Ok(left_val);
+                    }
+                }
+
+                self.evaluate(right)
+            }
         }
     }
 }

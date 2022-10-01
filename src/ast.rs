@@ -30,6 +30,11 @@ pub enum Expr {
         name: Token,
         value: Box<Expr>,
     },
+    Logical {
+        left: Box<Expr>,
+        operator: Token,
+        right: Box<Expr>,
+    },
 }
 
 impl Expr {
@@ -71,6 +76,16 @@ impl Visitor<Expr> for AstPrinter {
             }
             Expr::Variable { name } => format!("{}", name),
             Expr::Assignment { name, value } => format!("{} = {}", name, self.visit(value)?),
+            Expr::Logical {
+                left,
+                operator,
+                right,
+            } => format!(
+                "({} {} {})",
+                operator.lexeme,
+                self.visit(left)?,
+                self.visit(right)?
+            ),
         };
         Ok(s)
     }

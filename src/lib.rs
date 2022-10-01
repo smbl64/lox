@@ -1,5 +1,4 @@
 #![allow(clippy::new_without_default)]
-
 mod ast;
 mod interpreter;
 mod parser;
