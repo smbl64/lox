@@ -65,6 +65,7 @@ pub struct Interpreter {
 pub enum RuntimeError {
     InvalidOperand { operator: Token, msg: String },
     UndefinedVariable { name: Token, msg: String },
+    Break { token: Token },
 }
 
 impl Display for RuntimeError {
@@ -75,6 +76,9 @@ impl Display for RuntimeError {
             }
             RuntimeError::UndefinedVariable { name, msg } => {
                 write!(f, "[line {}] {}", name.line, msg)
+            }
+            RuntimeError::Break { token } => {
+                write!(f, "[line {}] Unexpected break statement", token.line)
             }
         }
     }
@@ -135,6 +139,11 @@ impl Visitor<Stmt> for Interpreter {
             Stmt::Expression { expr } => {
                 self.evaluate(expr)?;
             }
+            Stmt::Break { token } => {
+                return Err(RuntimeError::Break {
+                    token: token.clone(),
+                })
+            }
             Stmt::Print { expr } => {
                 let value = self.evaluate(expr)?;
                 println!("{}", value);
@@ -181,7 +190,15 @@ impl Visitor<Stmt> for Interpreter {
                     break;
                 }
 
-                self.execute(&body)?;
+                // We will catch 'Break' runtime errors. That error means that we hit a `break`
+                // statement. Any other error will be propagated up.
+                let result = self.execute(&body);
+
+                if matches!(result, Err(RuntimeError::Break { token: _ })) {
+                    break;
+                }
+
+                result?;
             },
         };
         Ok(())

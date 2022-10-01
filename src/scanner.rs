@@ -226,6 +226,7 @@ fn is_alpha_numeric(c: char) -> bool {
 fn get_keyword(text: &str) -> Option<TokenType> {
     match text {
         "and" => Some(TokenType::And),
+        "break" => Some(TokenType::Break),
         "class" => Some(TokenType::Class),
         "else" => Some(TokenType::Else),
         "false" => Some(TokenType::False),

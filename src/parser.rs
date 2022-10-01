@@ -61,6 +61,8 @@ impl Parser {
             self.for_statement()
         } else if self.match_tt(&[TokenType::Print]) {
             self.print_statement()
+        } else if self.match_tt(&[TokenType::Break]) {
+            self.break_statement()
         } else if self.match_tt(&[TokenType::LeftBrace]) {
             Some(Stmt::Block {
                 statements: self.block()?,
@@ -152,6 +154,12 @@ impl Parser {
         let expr = self.expression()?;
         self.consume(TokenType::Semicolon, "Expect ';' after expression")?;
         Some(Stmt::Print { expr })
+    }
+
+    fn break_statement(&mut self) -> Option<Stmt> {
+        let token = self.previous();
+        self.consume(TokenType::Semicolon, "Expect ';' after 'break'")?;
+        Some(Stmt::Break { token })
     }
 
     fn block(&mut self) -> Option<Vec<Stmt>> {

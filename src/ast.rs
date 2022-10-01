@@ -53,6 +53,9 @@ impl Expr {
 
 #[derive(Debug)]
 pub enum Stmt {
+    Break {
+        token: Token,
+    },
     Print {
         expr: Expr,
     },
