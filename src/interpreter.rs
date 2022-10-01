@@ -132,11 +132,12 @@ impl Visitor<Stmt> for Interpreter {
 
     fn visit(&mut self, stmt: &Stmt) -> Result<(), RuntimeError> {
         match stmt {
-            Stmt::Expression { expr } => self.evaluate(expr)?,
+            Stmt::Expression { expr } => {
+                self.evaluate(expr)?;
+            }
             Stmt::Print { expr } => {
                 let value = self.evaluate(expr)?;
                 println!("{}", value);
-                value
             }
             Stmt::Var { name, initializer } => {
                 let value = if let Some(expr) = initializer {
@@ -146,7 +147,6 @@ impl Visitor<Stmt> for Interpreter {
                 };
 
                 self.environment.borrow_mut().define(&name.lexeme, value);
-                LiteralValue::Null
             }
             Stmt::Block { statements } => {
                 let prev_env = self.environment.clone();
@@ -161,7 +161,6 @@ impl Visitor<Stmt> for Interpreter {
                 self.environment = prev_env;
 
                 result?;
-                LiteralValue::Null
             }
             Stmt::If {
                 condition,
@@ -175,9 +174,15 @@ impl Visitor<Stmt> for Interpreter {
                 } else if let Some(stmt) = else_branch {
                     self.execute(stmt.as_ref())?;
                 }
-
-                LiteralValue::Null
             }
+            Stmt::While { condition, body } => loop {
+                let value = &self.evaluate(&condition)?;
+                if !self.is_truthy(value) {
+                    break;
+                }
+
+                self.execute(&body)?;
+            },
         };
         Ok(())
     }

@@ -55,6 +55,8 @@ impl Parser {
     fn statement(&mut self) -> Option<Stmt> {
         if self.match_tt(&[TokenType::If]) {
             self.if_statement()
+        } else if self.match_tt(&[TokenType::While]) {
+            self.while_statement()
         } else if self.match_tt(&[TokenType::Print]) {
             self.print_statement()
         } else if self.match_tt(&[TokenType::LeftBrace]) {
@@ -83,6 +85,15 @@ impl Parser {
             then_branch,
             else_branch,
         })
+    }
+
+    fn while_statement(&mut self) -> Option<Stmt> {
+        self.consume(TokenType::LeftParen, "Expect '(' after 'while'")?;
+        let condition = self.expression()?;
+        self.consume(TokenType::RightParen, "Expect ')' after while condition")?;
+
+        let body = Box::new(self.statement()?);
+        Some(Stmt::While { condition, body })
     }
 
     fn print_statement(&mut self) -> Option<Stmt> {
