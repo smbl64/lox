@@ -71,10 +71,10 @@ impl Display for RuntimeError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             RuntimeError::InvalidOperand { operator, msg } => {
-                write!(f, "{}\n[line {}]", msg, operator.line)
+                write!(f, "[line {}] {}", operator.line, msg)
             }
             RuntimeError::UndefinedVariable { name, msg } => {
-                write!(f, "{}\n[line {}]", msg, name.line)
+                write!(f, "[line {}] {}", name.line, msg)
             }
         }
     }

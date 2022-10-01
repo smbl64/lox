@@ -57,6 +57,8 @@ impl Parser {
             self.if_statement()
         } else if self.match_tt(&[TokenType::While]) {
             self.while_statement()
+        } else if self.match_tt(&[TokenType::For]) {
+            self.for_statement()
         } else if self.match_tt(&[TokenType::Print]) {
             self.print_statement()
         } else if self.match_tt(&[TokenType::LeftBrace]) {
@@ -94,6 +96,56 @@ impl Parser {
 
         let body = Box::new(self.statement()?);
         Some(Stmt::While { condition, body })
+    }
+
+    fn for_statement(&mut self) -> Option<Stmt> {
+        self.consume(TokenType::LeftParen, "Expect '(' after 'for'")?;
+
+        let initializer = if self.match_tt(&[TokenType::Semicolon]) {
+            None
+        } else if self.match_tt(&[TokenType::Var]) {
+            Some(self.var_declaration()?)
+        } else {
+            Some(self.expression_statement()?)
+        };
+
+        let condition = if !self.check(&TokenType::Semicolon) {
+            self.expression()?
+        } else {
+            Expr::Literal {
+                value: LiteralValue::Boolean(true),
+            }
+        };
+        self.consume(TokenType::Semicolon, "Expect ';' after 'for' condition")?;
+
+        let increment = if !self.check(&TokenType::RightParen) {
+            Some(self.expression()?)
+        } else {
+            None
+        };
+        self.consume(TokenType::RightParen, "Expect ')' after 'for' clauses")?;
+
+        let mut body = self.statement()?;
+
+        // Now reconstruct all those parts as a For statement
+        if let Some(increment) = increment {
+            body = Stmt::Block {
+                statements: vec![body, Stmt::Expression { expr: increment }],
+            };
+        }
+
+        body = Stmt::While {
+            condition,
+            body: Box::new(body),
+        };
+
+        if let Some(initializer) = initializer {
+            body = Stmt::Block {
+                statements: vec![initializer, body],
+            };
+        }
+
+        Some(body)
     }
 
     fn print_statement(&mut self) -> Option<Stmt> {
