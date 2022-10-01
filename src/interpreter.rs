@@ -48,8 +48,6 @@ impl Environment {
         if value.is_none() && self.enclosing.is_some() {
             let rc = self.enclosing.as_ref().unwrap();
             return rc.borrow_mut().get(name);
-
-            //return self.enclosing.as_ref().unwrap().get(name);
         }
 
         value.ok_or_else(move || RuntimeError::UndefinedVariable {
@@ -145,6 +143,21 @@ impl Visitor<Stmt> for Interpreter {
                 result?;
                 LiteralValue::Null
             }
+            Stmt::If {
+                condition,
+                then_branch,
+                else_branch,
+            } => {
+                let condition_result = self.evaluate(condition)?;
+
+                if self.is_truthy(&condition_result) {
+                    self.execute(then_branch.as_ref())?;
+                } else if let Some(stmt) = else_branch {
+                    self.execute(stmt.as_ref())?;
+                }
+
+                LiteralValue::Null
+            }
         };
         Ok(())
     }
@@ -156,6 +169,7 @@ impl Interpreter {
             environment: Rc::new(RefCell::new(Environment::new())),
         }
     }
+
     pub fn interpret(&mut self, statements: &[Stmt]) {
         for stmt in statements {
             if let Err(e) = self.execute(stmt) {

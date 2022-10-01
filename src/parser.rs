@@ -53,7 +53,9 @@ impl Parser {
     }
 
     fn statement(&mut self) -> Option<Stmt> {
-        if self.match_tt(&[TokenType::Print]) {
+        if self.match_tt(&[TokenType::If]) {
+            self.if_statement()
+        } else if self.match_tt(&[TokenType::Print]) {
             self.print_statement()
         } else if self.match_tt(&[TokenType::LeftBrace]) {
             Some(Stmt::Block {
@@ -62,6 +64,25 @@ impl Parser {
         } else {
             self.expression_statement()
         }
+    }
+
+    fn if_statement(&mut self) -> Option<Stmt> {
+        self.consume(TokenType::LeftParen, "Expect '(' after 'if'")?;
+        let condition = self.expression()?;
+        self.consume(TokenType::RightParen, "Expect ')' after if condition")?;
+
+        let then_branch = Box::new(self.statement()?);
+        let else_branch = if self.match_tt(&[TokenType::Else]) {
+            Some(Box::new(self.statement()?))
+        } else {
+            None
+        };
+
+        Some(Stmt::If {
+            condition,
+            then_branch,
+            else_branch,
+        })
     }
 
     fn print_statement(&mut self) -> Option<Stmt> {
