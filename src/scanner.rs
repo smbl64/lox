@@ -199,7 +199,7 @@ impl Scanner {
         let text = &self.source[self.start..self.current];
         let value = text
             .parse::<f64>()
-            .expect(&format!("failed to parse number: {}", text));
+            .unwrap_or_else(|_| panic!("failed to parse number: {}", text));
 
         self.add_token_with_literal(TokenType::Number, Some(LiteralValue::Number(value)));
     }

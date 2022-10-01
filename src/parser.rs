@@ -107,7 +107,7 @@ impl Parser {
             self.error(equals, "Invalid assignment target");
         }
 
-        return Some(expr);
+        Some(expr)
     }
 
     fn equality(&mut self) -> Option<Expr> {

@@ -1,4 +1,5 @@
-#![warn(clippy::unwrap_in_result, clippy::expect_used)]
+#![allow(clippy::new_without_default)]
+
 mod ast;
 mod interpreter;
 mod parser;
@@ -21,9 +22,7 @@ static mut LOX: Lox = Lox::new();
 
 // TODO: get rid of this!
 pub fn get_lox() -> &'static mut Lox {
-    unsafe {
-        return &mut LOX;
-    }
+    unsafe { &mut LOX }
 }
 
 pub struct Lox {

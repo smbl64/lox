@@ -101,7 +101,7 @@ impl Visitor<Expr> for Interpreter {
             Expr::Variable { name } => self.environment.borrow().get(name),
             Expr::Assignment { name, value } => {
                 let value = self.visit(value.as_ref())?;
-                self.environment.borrow_mut().assign(&name, value.clone())?;
+                self.environment.borrow_mut().assign(name, value.clone())?;
                 Ok(value)
             }
         }
@@ -158,9 +158,8 @@ impl Interpreter {
     }
     pub fn interpret(&mut self, statements: &[Stmt]) {
         for stmt in statements {
-            match self.execute(&stmt) {
-                Err(e) => runtime_error(e),
-                _ => {}
+            if let Err(e) = self.execute(stmt) {
+                runtime_error(e)
             }
         }
     }
@@ -182,11 +181,7 @@ impl Interpreter {
     }
 
     fn is_truthy(&self, value: &LiteralValue) -> bool {
-        match value {
-            LiteralValue::Null => false,
-            LiteralValue::Boolean(false) => false,
-            _ => true,
-        }
+        !matches!(value, LiteralValue::Null | LiteralValue::Boolean(false))
     }
 
     fn visit_unary(&mut self, operator: &Token, right: &Expr) -> InterpreterResult {
