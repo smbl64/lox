@@ -57,7 +57,7 @@ pub enum Stmt {
         token: Token,
     },
     Print {
-        expr: Expr,
+        exprs: Vec<Expr>,
     },
     Expression {
         expr: Expr,

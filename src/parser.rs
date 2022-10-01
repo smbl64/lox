@@ -151,9 +151,14 @@ impl Parser {
     }
 
     fn print_statement(&mut self) -> Option<Stmt> {
-        let expr = self.expression()?;
-        self.consume(TokenType::Semicolon, "Expect ';' after expression")?;
-        Some(Stmt::Print { expr })
+        let mut exprs = vec![];
+        exprs.push(self.expression()?);
+        while self.match_tt(&[TokenType::Comma]) {
+            exprs.push(self.expression()?);
+        }
+
+        self.consume(TokenType::Semicolon, "Expect ';' after the print statement")?;
+        Some(Stmt::Print { exprs })
     }
 
     fn break_statement(&mut self) -> Option<Stmt> {

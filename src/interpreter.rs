@@ -144,9 +144,13 @@ impl Visitor<Stmt> for Interpreter {
                     token: token.clone(),
                 })
             }
-            Stmt::Print { expr } => {
-                let value = self.evaluate(expr)?;
-                println!("{}", value);
+            Stmt::Print { exprs } => {
+                for expr in exprs {
+                    let value = self.evaluate(expr)?;
+                    print!("{} ", value);
+                }
+
+                println!();
             }
             Stmt::Var { name, initializer } => {
                 let value = if let Some(expr) = initializer {
