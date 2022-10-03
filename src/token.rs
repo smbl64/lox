@@ -1,4 +1,6 @@
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
+
+use crate::prelude::Interpreter;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -51,6 +53,10 @@ pub enum TokenType {
     While,
 
     EOF,
+}
+
+trait Callable {
+    fn call(&self, interpret: &Interpreter, arguments: Vec<LiteralValue>) -> LiteralValue;
 }
 
 #[derive(Debug, Clone, PartialEq)]

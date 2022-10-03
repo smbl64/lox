@@ -126,6 +126,19 @@ impl Visitor<Expr> for Interpreter {
 
                 self.evaluate(right)
             }
+            Expr::Call {
+                callee,
+                paren,
+                arguments,
+            } => {
+                let callee = self.evaluate(&callee)?;
+                let mut args = vec![];
+                for arg in arguments {
+                    args.push(self.evaluate(arg)?);
+                }
+
+                todo!()
+            }
         }
     }
 }
