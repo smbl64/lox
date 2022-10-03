@@ -56,18 +56,18 @@ pub enum TokenType {
 }
 
 trait Callable {
-    fn call(&self, interpret: &Interpreter, arguments: Vec<LiteralValue>) -> LiteralValue;
+    fn call(&self, interpret: &Interpreter, arguments: Vec<Object>) -> Object;
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum LiteralValue {
+pub enum Object {
     Null,
     Boolean(bool),
     Number(f64),
     String(String),
 }
 
-impl LiteralValue {
+impl Object {
     pub fn number(&self) -> Option<f64> {
         match self {
             Self::Number(n) => Some(*n),
@@ -88,7 +88,7 @@ impl LiteralValue {
     }
 }
 
-impl Display for LiteralValue {
+impl Display for Object {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Boolean(b) => write!(f, "{}", b),
@@ -109,17 +109,12 @@ impl Display for LiteralValue {
 pub struct Token {
     pub token_type: TokenType,
     pub lexeme: String,
-    pub literal: Option<LiteralValue>,
+    pub literal: Option<Object>,
     pub line: i32,
 }
 
 impl Token {
-    pub fn new(
-        token_type: TokenType,
-        lexeme: &str,
-        literal: Option<LiteralValue>,
-        line: i32,
-    ) -> Self {
+    pub fn new(token_type: TokenType, lexeme: &str, literal: Option<Object>, line: i32) -> Self {
         Self {
             token_type,
             lexeme: lexeme.to_owned(),

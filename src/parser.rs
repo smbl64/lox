@@ -115,7 +115,7 @@ impl Parser {
             self.expression()?
         } else {
             Expr::Literal {
-                value: LiteralValue::Boolean(true),
+                value: Object::Boolean(true),
             }
         };
         self.consume(TokenType::Semicolon, "Expect ';' after 'for' condition")?;
@@ -360,17 +360,17 @@ impl Parser {
     fn primary(&mut self) -> Option<Expr> {
         if self.match_tt(&[TokenType::False]) {
             return Some(Expr::Literal {
-                value: LiteralValue::Boolean(false),
+                value: Object::Boolean(false),
             });
         }
         if self.match_tt(&[TokenType::True]) {
             return Some(Expr::Literal {
-                value: LiteralValue::Boolean(true),
+                value: Object::Boolean(true),
             });
         }
         if self.match_tt(&[TokenType::Nil]) {
             return Some(Expr::Literal {
-                value: LiteralValue::Null,
+                value: Object::Null,
             });
         }
         if self.match_tt(&[TokenType::Number, TokenType::StringLiteral]) {

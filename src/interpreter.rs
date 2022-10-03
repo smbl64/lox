@@ -6,7 +6,7 @@ use crate::{prelude::*, runtime_error};
 #[derive(Debug)]
 pub struct Environment {
     enclosing: Option<Rc<RefCell<Environment>>>,
-    values: HashMap<String, LiteralValue>,
+    values: HashMap<String, Object>,
 }
 
 impl Environment {
@@ -21,11 +21,11 @@ impl Environment {
         }
     }
 
-    pub fn define(&mut self, name: &str, value: LiteralValue) {
+    pub fn define(&mut self, name: &str, value: Object) {
         self.values.insert(name.to_owned(), value);
     }
 
-    pub fn assign(&mut self, name: &Token, value: LiteralValue) -> Result<(), RuntimeError> {
+    pub fn assign(&mut self, name: &Token, value: Object) -> Result<(), RuntimeError> {
         if !self.values.contains_key(&name.lexeme) {
             // Ask one level above if possible
             if let Some(ref e) = self.enclosing {
@@ -42,7 +42,7 @@ impl Environment {
         Ok(())
     }
 
-    pub fn get(&self, name: &Token) -> Result<LiteralValue, RuntimeError> {
+    pub fn get(&self, name: &Token) -> Result<Object, RuntimeError> {
         let value = self.values.get(&name.lexeme).map(|lit| lit.to_owned());
         // Ask one level above if possible
         if value.is_none() && self.enclosing.is_some() {
@@ -84,10 +84,10 @@ impl Display for RuntimeError {
     }
 }
 
-type InterpreterResult = Result<LiteralValue, RuntimeError>;
+type InterpreterResult = Result<Object, RuntimeError>;
 
 impl Visitor<Expr> for Interpreter {
-    type Result = LiteralValue;
+    type Result = Object;
     type Error = RuntimeError;
 
     fn visit(&mut self, expr: &Expr) -> InterpreterResult {
@@ -169,7 +169,7 @@ impl Visitor<Stmt> for Interpreter {
                 let value = if let Some(expr) = initializer {
                     self.evaluate(expr)?
                 } else {
-                    LiteralValue::Null
+                    Object::Null
                 };
 
                 self.environment.borrow_mut().define(&name.lexeme, value);
@@ -253,16 +253,16 @@ impl Interpreter {
         self.visit(expression)
     }
 
-    fn is_truthy(&self, value: &LiteralValue) -> bool {
-        !matches!(value, LiteralValue::Null | LiteralValue::Boolean(false))
+    fn is_truthy(&self, value: &Object) -> bool {
+        !matches!(value, Object::Null | Object::Boolean(false))
     }
 
     fn visit_unary(&mut self, operator: &Token, right: &Expr) -> InterpreterResult {
         let value = self.visit(right)?;
         match operator.token_type {
             TokenType::Minus => {
-                if let LiteralValue::Number(n) = value {
-                    Ok(LiteralValue::Number(-n))
+                if let Object::Number(n) = value {
+                    Ok(Object::Number(-n))
                 } else {
                     Err(RuntimeError::InvalidOperand {
                         operator: operator.clone(),
@@ -270,10 +270,10 @@ impl Interpreter {
                     })
                 }
             }
-            TokenType::Bang => Ok(LiteralValue::Boolean(!self.is_truthy(&value))),
+            TokenType::Bang => Ok(Object::Boolean(!self.is_truthy(&value))),
 
             // Unreachable code. We don't have any unary expression except the ones above.
-            _ => Ok(LiteralValue::Null),
+            _ => Ok(Object::Null),
         }
     }
 
@@ -284,9 +284,9 @@ impl Interpreter {
         match operator.token_type {
             TokenType::Plus => {
                 if let (Some(l), Some(r)) = (left_value.number(), right_value.number()) {
-                    Ok(LiteralValue::Number(l + r))
+                    Ok(Object::Number(l + r))
                 } else if let (Some(l), Some(r)) = (left_value.string(), right_value.string()) {
-                    Ok(LiteralValue::String(format!("{}{}", l, r)))
+                    Ok(Object::String(format!("{}{}", l, r)))
                 } else {
                     Err(RuntimeError::InvalidOperand {
                         operator: operator.clone(),
@@ -296,39 +296,39 @@ impl Interpreter {
             }
             TokenType::Minus => self
                 .check_number_operands(operator, &left_value, &right_value)
-                .map(|(l, r)| LiteralValue::Number(l - r)),
+                .map(|(l, r)| Object::Number(l - r)),
             TokenType::Star => self
                 .check_number_operands(operator, &left_value, &right_value)
-                .map(|(l, r)| LiteralValue::Number(l * r)),
+                .map(|(l, r)| Object::Number(l * r)),
             TokenType::Slash => self
                 .check_number_operands(operator, &left_value, &right_value)
-                .map(|(l, r)| LiteralValue::Number(l / r)),
+                .map(|(l, r)| Object::Number(l / r)),
             TokenType::Greater => self
                 .check_number_operands(operator, &left_value, &right_value)
-                .map(|(l, r)| LiteralValue::Boolean(l > r)),
+                .map(|(l, r)| Object::Boolean(l > r)),
             TokenType::GreaterEqual => self
                 .check_number_operands(operator, &left_value, &right_value)
-                .map(|(l, r)| LiteralValue::Boolean(l >= r)),
+                .map(|(l, r)| Object::Boolean(l >= r)),
             TokenType::Less => self
                 .check_number_operands(operator, &left_value, &right_value)
-                .map(|(l, r)| LiteralValue::Boolean(l < r)),
+                .map(|(l, r)| Object::Boolean(l < r)),
             TokenType::LessEqual => self
                 .check_number_operands(operator, &left_value, &right_value)
-                .map(|(l, r)| LiteralValue::Boolean(l <= r)),
+                .map(|(l, r)| Object::Boolean(l <= r)),
 
-            TokenType::EqualEqual => Ok(LiteralValue::Boolean(left_value == right_value)),
-            TokenType::BangEqual => Ok(LiteralValue::Boolean(left_value != right_value)),
+            TokenType::EqualEqual => Ok(Object::Boolean(left_value == right_value)),
+            TokenType::BangEqual => Ok(Object::Boolean(left_value != right_value)),
 
             // Unreachable code
-            _ => Ok(LiteralValue::Null),
+            _ => Ok(Object::Null),
         }
     }
 
     fn check_number_operands(
         &self,
         operator: &Token,
-        left: &LiteralValue,
-        right: &LiteralValue,
+        left: &Object,
+        right: &Object,
     ) -> Result<(f64, f64), RuntimeError> {
         if let (Some(l), Some(r)) = (left.number(), right.number()) {
             Ok((l, r))

@@ -1,4 +1,4 @@
-use crate::token::{LiteralValue, Token};
+use crate::token::{Object, Token};
 
 pub trait Visitor<I> {
     type Result;
@@ -22,7 +22,7 @@ pub enum Expr {
         expr: Box<Expr>,
     },
     Literal {
-        value: LiteralValue,
+        value: Object,
     },
     Unary {
         operator: Token,
@@ -45,13 +45,13 @@ pub enum Expr {
 impl Expr {
     pub fn int_literal(v: f64) -> Expr {
         Expr::Literal {
-            value: LiteralValue::Number(v),
+            value: Object::Number(v),
         }
     }
 
     pub fn str_literal(s: &str) -> Expr {
         Expr::Literal {
-            value: LiteralValue::String(s.to_owned()),
+            value: Object::String(s.to_owned()),
         }
     }
 }
