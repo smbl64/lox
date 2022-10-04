@@ -1,4 +1,7 @@
-use std::fmt::{Debug, Display};
+use std::{
+    fmt::{Debug, Display},
+    rc::Rc,
+};
 
 use crate::prelude::Interpreter;
 
@@ -55,16 +58,31 @@ pub enum TokenType {
     EOF,
 }
 
-trait Callable {
+pub trait Callable: Debug {
+    fn arity(&self) -> usize;
     fn call(&self, interpret: &Interpreter, arguments: Vec<Object>) -> Object;
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub enum Object {
     Null,
     Boolean(bool),
     Number(f64),
     String(String),
+    Callable(Rc<dyn Callable>),
+}
+
+impl PartialEq for Object {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Null, Self::Null) => true,
+            (Self::Boolean(left), Self::Boolean(right)) => left == right,
+            (Self::Number(left), Self::Number(right)) => left == right,
+            (Self::String(left), Self::String(right)) => left == right,
+            (Self::Callable(_), Self::Callable(_)) => false,
+            _ => false,
+        }
+    }
 }
 
 impl Object {
@@ -101,6 +119,7 @@ impl Display for Object {
             }
             Self::String(s) => write!(f, "{}", s),
             Self::Null => write!(f, "nil"),
+            Self::Callable(c) => write!(f, "{:?}", c),
         }
     }
 }

@@ -57,10 +57,6 @@ impl Environment {
     }
 }
 
-pub struct Interpreter {
-    environment: Rc<RefCell<Environment>>,
-}
-
 #[derive(Debug, PartialEq)]
 pub enum RuntimeError {
     InvalidOperand { operator: Token, msg: String },
@@ -85,6 +81,11 @@ impl Display for RuntimeError {
 }
 
 type InterpreterResult = Result<Object, RuntimeError>;
+
+pub struct Interpreter {
+    globals: Rc<RefCell<Environment>>,
+    environment: Rc<RefCell<Environment>>,
+}
 
 impl Visitor<Expr> for Interpreter {
     type Result = Object;
@@ -132,12 +133,31 @@ impl Visitor<Expr> for Interpreter {
                 arguments,
             } => {
                 let callee = self.evaluate(&callee)?;
-                let mut args = vec![];
-                for arg in arguments {
-                    args.push(self.evaluate(arg)?);
-                }
+                if let Object::Callable(callable) = callee {
+                    if callable.arity() != arguments.len() {
+                        return Err(RuntimeError::InvalidOperand {
+                            operator: paren.clone(),
+                            msg: format!(
+                                "Expected {} argumnets, got {}",
+                                callable.arity(),
+                                arguments.len()
+                            ),
+                        });
+                    }
 
-                todo!()
+                    // Evaluate all arguments
+                    let mut args = vec![];
+                    for arg in arguments {
+                        args.push(self.evaluate(arg)?);
+                    }
+
+                    Ok(callable.call(self, args))
+                } else {
+                    return Err(RuntimeError::InvalidOperand {
+                        operator: paren.clone(),
+                        msg: "Can only call functions and classes".to_owned(),
+                    });
+                }
             }
         }
     }
@@ -222,10 +242,48 @@ impl Visitor<Stmt> for Interpreter {
     }
 }
 
+/// This module contains built-in (native) functions.
+mod builtins {
+    use super::*;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[derive(Debug)]
+    struct Clock;
+
+    impl Callable for Clock {
+        fn arity(&self) -> usize {
+            0
+        }
+
+        fn call(&self, _interpret: &Interpreter, _arguments: Vec<Object>) -> Object {
+            let start = SystemTime::now();
+            let since_epoch = start
+                .duration_since(UNIX_EPOCH)
+                .expect("Time went backward");
+
+            Object::Number(since_epoch.as_millis() as f64 / 1000.0)
+        }
+    }
+
+    pub fn clock() -> Rc<dyn Callable> {
+        Rc::new(Clock)
+    }
+}
+
 impl Interpreter {
     pub fn new() -> Self {
+        let globals = Rc::new(RefCell::new(Environment::new()));
+        let environment = Rc::new(RefCell::new(Environment::with_enclosing(Some(
+            globals.clone(),
+        ))));
+
+        globals
+            .borrow_mut()
+            .define("clock", Object::Callable(builtins::clock()));
+
         Self {
-            environment: Rc::new(RefCell::new(Environment::new())),
+            globals,
+            environment,
         }
     }
 

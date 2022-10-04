@@ -120,6 +120,11 @@ impl Visitor<Expr> for AstPrinter {
                 self.visit(left)?,
                 self.visit(right)?
             ),
+            Expr::Call {
+                callee,
+                paren: _,
+                arguments,
+            } => format!("{:?}({:?})", self.visit(callee)?, arguments),
         };
         Ok(s)
     }
