@@ -1,5 +1,6 @@
 mod environment;
 mod error;
+mod func;
 mod native;
 
 use std::cell::RefCell;
@@ -127,7 +128,7 @@ impl Visitor<Stmt> for Interpreter {
                 let prev_env = self.environment.clone();
 
                 // Create a new environment for executing the block
-                let new_env = Environment::with_enclosing(Some(self.environment.clone()));
+                let new_env = Environment::with_enclosing(self.environment.clone());
                 self.environment = Rc::new(RefCell::new(new_env));
 
                 let result = self.execute_block(statements);
@@ -175,9 +176,7 @@ impl Visitor<Stmt> for Interpreter {
 impl Interpreter {
     pub fn new() -> Self {
         let globals = Rc::new(RefCell::new(Environment::new()));
-        let environment = Rc::new(RefCell::new(Environment::with_enclosing(Some(
-            globals.clone(),
-        ))));
+        let environment = Rc::new(RefCell::new(Environment::with_enclosing(globals.clone())));
 
         globals
             .borrow_mut()

@@ -60,7 +60,7 @@ pub enum TokenType {
 
 pub trait Callable: Debug {
     fn arity(&self) -> usize;
-    fn call(&self, interpret: &Interpreter, arguments: Vec<Object>) -> Object;
+    fn call(&self, interpret: &mut Interpreter, arguments: Vec<Object>) -> Object;
 }
 
 #[derive(Debug, Clone)]

@@ -11,13 +11,16 @@ pub struct Environment {
 
 impl Environment {
     pub fn new() -> Self {
-        Self::with_enclosing(None)
-    }
-
-    pub fn with_enclosing(enclosing: Option<Rc<RefCell<Environment>>>) -> Self {
         Self {
             values: HashMap::new(),
-            enclosing,
+            enclosing: None,
+        }
+    }
+
+    pub fn with_enclosing(enclosing: Rc<RefCell<Environment>>) -> Self {
+        Self {
+            values: HashMap::new(),
+            enclosing: Some(enclosing),
         }
     }
 
