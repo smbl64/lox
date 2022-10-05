@@ -23,6 +23,8 @@ impl Parser {
     fn declaration(&mut self) -> Option<Stmt> {
         let result = if self.match_tt(&[TokenType::Var]) {
             self.var_declaration()
+        } else if self.match_tt(&[TokenType::Fun]) {
+            self.function("function")
         } else {
             self.statement()
         };
@@ -50,6 +52,43 @@ impl Parser {
         )?;
 
         Some(Stmt::Var { name, initializer })
+    }
+
+    fn function(&mut self, kind: &str) -> Option<Stmt> {
+        let name = self.consume(
+            TokenType::Identifier,
+            format!("Expect {} name", kind).as_str(),
+        )?;
+
+        self.consume(
+            TokenType::LeftParen,
+            format!("Expect '(' after {} name", kind).as_str(),
+        )?;
+
+        let mut parameters = vec![];
+        if !self.check(&TokenType::RightParen) {
+            loop {
+                if parameters.len() >= 255 {
+                    self.error(self.peek().clone(), "Can't have more than 255 parameters");
+                }
+
+                parameters.push(self.consume(TokenType::Identifier, "Expect parameter name")?);
+            }
+        }
+
+        self.consume(TokenType::RightParen, "Expect ')' after parameters")?;
+        self.consume(
+            TokenType::LeftBrace,
+            format!("Expect '{{' before {} body", kind).as_str(),
+        )?;
+
+        let body = self.block()?;
+
+        Some(Stmt::Function {
+            name,
+            params: parameters,
+            body,
+        })
     }
 
     fn statement(&mut self) -> Option<Stmt> {
@@ -398,6 +437,8 @@ impl Parser {
         None
     }
 
+    /// Return the next token if its `token_type` matches the given type as input.
+    /// Otherwise, print the error message and return `None`.
     fn consume(&mut self, token_type: TokenType, message: &str) -> Option<Token> {
         if self.check(&token_type) {
             return Some(self.advance());
@@ -426,12 +467,13 @@ impl Parser {
         false
     }
 
-    fn check(&self, tt: &TokenType) -> bool {
+    /// Check to see if the next token's type matches the given `token_type`.
+    fn check(&self, token_type: &TokenType) -> bool {
         if self.is_at_end() {
             return false;
         }
 
-        self.peek().token_type == *tt
+        self.peek().token_type == *token_type
     }
 
     fn advance(&mut self) -> Token {

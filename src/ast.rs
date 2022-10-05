@@ -74,6 +74,11 @@ pub enum Stmt {
     Block {
         statements: Vec<Stmt>,
     },
+    Function {
+        name: Token,
+        params: Vec<Token>,
+        body: Vec<Stmt>,
+    },
     If {
         condition: Expr,
         then_branch: Box<Stmt>,
