@@ -431,19 +431,19 @@ mod tests {
 
     macro_rules! assert_number {
         ($source:literal, $expected:expr) => {
-            assert_literal!($source, $expected, LiteralValue::Number);
+            assert_literal!($source, $expected, Object::Number);
         };
     }
 
     macro_rules! assert_string {
         ($source:literal, $expected:expr) => {
-            assert_literal!($source, $expected, LiteralValue::String);
+            assert_literal!($source, $expected, Object::String);
         };
     }
 
     macro_rules! assert_boolean {
         ($source:literal, $expected:expr) => {
-            assert_literal!($source, $expected, LiteralValue::Boolean);
+            assert_literal!($source, $expected, Object::Boolean);
         };
     }
 
