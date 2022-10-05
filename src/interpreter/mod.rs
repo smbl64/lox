@@ -1,84 +1,13 @@
+mod environment;
+mod error;
+mod native;
+
 use std::cell::RefCell;
-use std::{collections::HashMap, fmt::Display, rc::Rc};
+use std::rc::Rc;
 
 use crate::{prelude::*, runtime_error};
-
-#[derive(Debug)]
-pub struct Environment {
-    enclosing: Option<Rc<RefCell<Environment>>>,
-    values: HashMap<String, Object>,
-}
-
-impl Environment {
-    pub fn new() -> Self {
-        Self::with_enclosing(None)
-    }
-
-    pub fn with_enclosing(enclosing: Option<Rc<RefCell<Environment>>>) -> Self {
-        Self {
-            values: HashMap::new(),
-            enclosing,
-        }
-    }
-
-    pub fn define(&mut self, name: &str, value: Object) {
-        self.values.insert(name.to_owned(), value);
-    }
-
-    pub fn assign(&mut self, name: &Token, value: Object) -> Result<(), RuntimeError> {
-        if !self.values.contains_key(&name.lexeme) {
-            // Ask one level above if possible
-            if let Some(ref e) = self.enclosing {
-                return e.borrow_mut().assign(name, value);
-            }
-
-            return Err(RuntimeError::UndefinedVariable {
-                name: name.clone(),
-                msg: format!("Undefined variable '{}'", name.lexeme),
-            });
-        }
-
-        self.values.insert(name.lexeme.clone(), value);
-        Ok(())
-    }
-
-    pub fn get(&self, name: &Token) -> Result<Object, RuntimeError> {
-        let value = self.values.get(&name.lexeme).map(|lit| lit.to_owned());
-        // Ask one level above if possible
-        if value.is_none() && self.enclosing.is_some() {
-            let rc = self.enclosing.as_ref().unwrap();
-            return rc.borrow_mut().get(name);
-        }
-
-        value.ok_or_else(move || RuntimeError::UndefinedVariable {
-            name: name.clone(),
-            msg: format!("Undefined variable '{}'", name.lexeme),
-        })
-    }
-}
-
-#[derive(Debug, PartialEq)]
-pub enum RuntimeError {
-    InvalidOperand { operator: Token, msg: String },
-    UndefinedVariable { name: Token, msg: String },
-    Break { token: Token },
-}
-
-impl Display for RuntimeError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            RuntimeError::InvalidOperand { operator, msg } => {
-                write!(f, "[line {}] {}", operator.line, msg)
-            }
-            RuntimeError::UndefinedVariable { name, msg } => {
-                write!(f, "[line {}] {}", name.line, msg)
-            }
-            RuntimeError::Break { token } => {
-                write!(f, "[line {}] Unexpected break statement", token.line)
-            }
-        }
-    }
-}
+use environment::Environment;
+pub use error::RuntimeError;
 
 type InterpreterResult = Result<Object, RuntimeError>;
 
@@ -237,36 +166,9 @@ impl Visitor<Stmt> for Interpreter {
 
                 result?;
             },
+            Stmt::Function { name, params, body } => todo!(),
         };
         Ok(())
-    }
-}
-
-/// This module contains built-in (native) functions.
-mod builtins {
-    use super::*;
-    use std::time::{SystemTime, UNIX_EPOCH};
-
-    #[derive(Debug)]
-    struct Clock;
-
-    impl Callable for Clock {
-        fn arity(&self) -> usize {
-            0
-        }
-
-        fn call(&self, _interpret: &Interpreter, _arguments: Vec<Object>) -> Object {
-            let start = SystemTime::now();
-            let since_epoch = start
-                .duration_since(UNIX_EPOCH)
-                .expect("Time went backward");
-
-            Object::Number(since_epoch.as_millis() as f64 / 1000.0)
-        }
-    }
-
-    pub fn clock() -> Rc<dyn Callable> {
-        Rc::new(Clock)
     }
 }
 
@@ -279,7 +181,7 @@ impl Interpreter {
 
         globals
             .borrow_mut()
-            .define("clock", Object::Callable(builtins::clock()));
+            .define("clock", Object::Callable(native::clock()));
 
         Self {
             globals,
