@@ -114,6 +114,18 @@ impl Visitor<Stmt> for Interpreter {
                     token: token.clone(),
                 })
             }
+            Stmt::Return { keyword, value } => {
+                let value = if let Some(expr) = value {
+                    self.evaluate(expr)?
+                } else {
+                    Object::Null
+                };
+
+                return Err(RuntimeError::Return {
+                    token: keyword.clone(),
+                    value,
+                });
+            }
             Stmt::Print { exprs } => {
                 for expr in exprs {
                     let value = self.evaluate(expr)?;
@@ -175,7 +187,8 @@ impl Visitor<Stmt> for Interpreter {
 impl Interpreter {
     pub fn new() -> Self {
         let globals = Rc::new(RefCell::new(Environment::new()));
-        let environment = Rc::new(RefCell::new(Environment::with_enclosing(globals.clone())));
+        //let environment = Rc::new(RefCell::new(Environment::with_enclosing(globals.clone())));
+        let environment = globals.clone();
 
         globals
             .borrow_mut()

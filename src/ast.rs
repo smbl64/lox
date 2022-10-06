@@ -63,6 +63,10 @@ pub enum Stmt {
     Break {
         token: Token,
     },
+    Return {
+        keyword: Token,
+        value: Option<Expr>,
+    },
     Print {
         exprs: Vec<Expr>,
     },

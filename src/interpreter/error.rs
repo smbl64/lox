@@ -1,4 +1,4 @@
-use crate::token::Token;
+use crate::token::{Object, Token};
 use std::fmt::Display;
 
 #[derive(Debug, PartialEq)]
@@ -6,6 +6,7 @@ pub enum RuntimeError {
     InvalidOperand { operator: Token, msg: String },
     UndefinedVariable { name: Token, msg: String },
     Break { token: Token },
+    Return { token: Token, value: Object },
 }
 
 impl Display for RuntimeError {
@@ -19,6 +20,9 @@ impl Display for RuntimeError {
             }
             RuntimeError::Break { token } => {
                 write!(f, "[line {}] Unexpected break statement", token.line)
+            }
+            RuntimeError::Return { token, value: _ } => {
+                write!(f, "[line {}] Unexpected return statement", token.line)
             }
         }
     }

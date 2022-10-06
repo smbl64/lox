@@ -40,9 +40,16 @@ impl Callable for LoxFunction {
         }
 
         let environment = Rc::new(RefCell::new(environment));
+        let res = interpret.execute_block(&self.body, environment);
 
-        let _ = interpret.execute_block(&self.body, environment)?;
-        Ok(Object::Null)
+        // If a 'Return' runtime exception is generated, this means the block had a
+        // return statement. We should extract the value from it and return it.
+        // Otherwise, return Object::Null or the runtime error.
+        if let Err(RuntimeError::Return { token: _, value }) = res {
+            Ok(value)
+        } else {
+            res.map(|_| Object::Null)
+        }
     }
 }
 
