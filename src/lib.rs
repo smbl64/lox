@@ -73,8 +73,8 @@ pub fn run(input: &str, interpreter: &mut Interpreter) -> Result<(), anyhow::Err
     let mut parser = Parser::new(tokens);
     match parser.parse() {
         None => return Ok(()),
-        Some(expr) => {
-            interpreter.interpret(&expr);
+        Some(stmts) => {
+            interpreter.interpret(&stmts);
         }
     }
 

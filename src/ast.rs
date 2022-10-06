@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::token::{Object, Token};
 
 pub trait Visitor<I> {
@@ -77,7 +79,7 @@ pub enum Stmt {
     Function {
         name: Token,
         params: Vec<Token>,
-        body: Vec<Stmt>,
+        body: Vec<Rc<Stmt>>,
     },
     If {
         condition: Expr,
@@ -88,6 +90,12 @@ pub enum Stmt {
         condition: Expr,
         body: Box<Stmt>,
     },
+}
+
+impl AsRef<Stmt> for Stmt {
+    fn as_ref(&self) -> &Stmt {
+        &self
+    }
 }
 
 pub struct AstPrinter;

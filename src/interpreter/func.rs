@@ -1,25 +1,25 @@
-use std::fmt::Display;
+use std::{cell::RefCell, fmt::Display, rc::Rc};
 
 use crate::{
     ast::Stmt,
     token::{Callable, Object, Token},
 };
 
-use super::{environment::Environment, Interpreter};
+use super::{environment::Environment, Interpreter, RuntimeError};
 
 #[derive(Debug)]
 pub struct LoxFunction {
     name: Token,
     params: Vec<Token>,
-    body: Vec<Stmt>,
+    body: Vec<Rc<Stmt>>,
 }
 
 impl LoxFunction {
-    pub fn new(declaration: Stmt) -> Self {
-        match declaration {
-            Stmt::Function { name, params, body } => Self { name, params, body },
-            // TODO: Find a way to enforce it at compile time!
-            _ => panic!("Only Stmt::Function is allowd!"),
+    pub fn new(name: Token, params: Vec<Token>, body: &[Rc<Stmt>]) -> Self {
+        Self {
+            name,
+            params,
+            body: body.to_vec(),
         }
     }
 }
@@ -29,14 +29,20 @@ impl Callable for LoxFunction {
         self.params.len()
     }
 
-    fn call(&self, interpret: &mut Interpreter, arguments: Vec<Object>) -> Object {
+    fn call(
+        &self,
+        interpret: &mut Interpreter,
+        arguments: Vec<Object>,
+    ) -> Result<Object, RuntimeError> {
         let mut environment = Environment::with_enclosing(interpret.globals.clone());
         for (arg, param) in arguments.iter().zip(&self.params) {
             environment.define(param.lexeme.as_str(), arg.clone());
         }
 
-        let _ = interpret.execute_block(&self.body);
-        Object::Null
+        let environment = Rc::new(RefCell::new(environment));
+
+        let _ = interpret.execute_block(&self.body, environment)?;
+        Ok(Object::Null)
     }
 }
 

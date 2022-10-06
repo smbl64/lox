@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::prelude::*;
 use crate::report;
 
@@ -73,6 +75,9 @@ impl Parser {
                 }
 
                 parameters.push(self.consume(TokenType::Identifier, "Expect parameter name")?);
+                if !self.match_tt(&[TokenType::Comma]) {
+                    break;
+                }
             }
         }
 
@@ -82,7 +87,7 @@ impl Parser {
             format!("Expect '{{' before {} body", kind).as_str(),
         )?;
 
-        let body = self.block()?;
+        let body = self.block()?.into_iter().map(Rc::new).collect::<Vec<_>>();
 
         Some(Stmt::Function {
             name,
@@ -382,7 +387,7 @@ impl Parser {
 
                 arguments.push(self.expression()?);
 
-                if self.match_tt(&[TokenType::Comma]) {
+                if !self.match_tt(&[TokenType::Comma]) {
                     break;
                 }
             }

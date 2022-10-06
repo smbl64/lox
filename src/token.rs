@@ -3,7 +3,7 @@ use std::{
     rc::Rc,
 };
 
-use crate::prelude::Interpreter;
+use crate::prelude::{Interpreter, RuntimeError};
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -60,7 +60,11 @@ pub enum TokenType {
 
 pub trait Callable: Debug {
     fn arity(&self) -> usize;
-    fn call(&self, interpret: &mut Interpreter, arguments: Vec<Object>) -> Object;
+    fn call(
+        &self,
+        interpret: &mut Interpreter,
+        arguments: Vec<Object>,
+    ) -> Result<Object, RuntimeError>;
 }
 
 #[derive(Debug, Clone)]

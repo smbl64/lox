@@ -9,6 +9,7 @@ use std::rc::Rc;
 use crate::{prelude::*, runtime_error};
 use environment::Environment;
 pub use error::RuntimeError;
+use func::LoxFunction;
 
 type InterpreterResult = Result<Object, RuntimeError>;
 
@@ -81,7 +82,7 @@ impl Visitor<Expr> for Interpreter {
                         args.push(self.evaluate(arg)?);
                     }
 
-                    Ok(callable.call(self, args))
+                    callable.call(self, args)
                 } else {
                     return Err(RuntimeError::InvalidOperand {
                         operator: paren.clone(),
@@ -101,6 +102,12 @@ impl Visitor<Stmt> for Interpreter {
         match stmt {
             Stmt::Expression { expr } => {
                 self.evaluate(expr)?;
+            }
+            Stmt::Function { name, params, body } => {
+                let function = LoxFunction::new(name.clone(), params.to_vec(), body);
+                self.environment
+                    .borrow_mut()
+                    .define(&name.lexeme, Object::Callable(Rc::new(function)));
             }
             Stmt::Break { token } => {
                 return Err(RuntimeError::Break {
@@ -125,18 +132,11 @@ impl Visitor<Stmt> for Interpreter {
                 self.environment.borrow_mut().define(&name.lexeme, value);
             }
             Stmt::Block { statements } => {
-                let prev_env = self.environment.clone();
-
                 // Create a new environment for executing the block
                 let new_env = Environment::with_enclosing(self.environment.clone());
-                self.environment = Rc::new(RefCell::new(new_env));
+                let new_env = Rc::new(RefCell::new(new_env));
 
-                let result = self.execute_block(statements);
-
-                // Restore the original environment
-                self.environment = prev_env;
-
-                result?;
+                self.execute_block(statements, new_env)?;
             }
             Stmt::If {
                 condition,
@@ -167,7 +167,6 @@ impl Visitor<Stmt> for Interpreter {
 
                 result?;
             },
-            Stmt::Function { name, params, body } => todo!(),
         };
         Ok(())
     }
@@ -200,11 +199,27 @@ impl Interpreter {
         self.visit(stmt)
     }
 
-    fn execute_block(&mut self, statements: &[Stmt]) -> Result<(), RuntimeError> {
+    fn execute_block<I, R>(
+        &mut self,
+        statements: I,
+        environment: Rc<RefCell<Environment>>,
+    ) -> Result<(), RuntimeError>
+    where
+        I: IntoIterator<Item = R>,
+        R: AsRef<Stmt>,
+    {
+        let prev_env = self.environment.clone();
+        self.environment = environment;
+
         for s in statements {
-            self.execute(s)?;
+            let result = self.execute(s.as_ref());
+            if matches!(result, Err(_)) {
+                self.environment = prev_env;
+                return result;
+            }
         }
 
+        self.environment = prev_env;
         Ok(())
     }
 
