@@ -104,7 +104,12 @@ impl Visitor<Stmt> for Interpreter {
                 self.evaluate(expr)?;
             }
             Stmt::Function { name, params, body } => {
-                let function = LoxFunction::new(name.clone(), params.to_vec(), body);
+                // self.environment is the current active environment when function
+                // is being declared, NOT when it's being called!
+                // In other words, this is the enclosing environment in which the function is
+                // declarad. For inner functions, it refers to their parent function's environment.
+                let env = self.environment.clone();
+                let function = LoxFunction::new(name.clone(), params.to_vec(), body, env);
                 self.environment
                     .borrow_mut()
                     .define(&name.lexeme, Object::Callable(Rc::new(function)));

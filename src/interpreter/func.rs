@@ -12,14 +12,21 @@ pub struct LoxFunction {
     name: Token,
     params: Vec<Token>,
     body: Vec<Rc<Stmt>>,
+    closure: Rc<RefCell<Environment>>,
 }
 
 impl LoxFunction {
-    pub fn new(name: Token, params: Vec<Token>, body: &[Rc<Stmt>]) -> Self {
+    pub fn new(
+        name: Token,
+        params: Vec<Token>,
+        body: &[Rc<Stmt>],
+        closure: Rc<RefCell<Environment>>,
+    ) -> Self {
         Self {
             name,
             params,
             body: body.to_vec(),
+            closure,
         }
     }
 }
@@ -34,7 +41,7 @@ impl Callable for LoxFunction {
         interpret: &mut Interpreter,
         arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        let mut environment = Environment::with_enclosing(interpret.globals.clone());
+        let mut environment = Environment::with_enclosing(self.closure.clone());
         for (arg, param) in arguments.iter().zip(&self.params) {
             environment.define(param.lexeme.as_str(), arg.clone());
         }
