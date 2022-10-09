@@ -214,7 +214,7 @@ impl<'a> Visitor<Expr> for Resolver<'a> {
             }
             Expr::Assignment { name, value } => {
                 self.resolve_expr(&value)?;
-                self.resolve_local(value, name)
+                self.resolve_local(input, name)
             }
             Expr::Binary {
                 left,

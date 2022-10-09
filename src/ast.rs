@@ -47,7 +47,7 @@ pub enum Expr {
 impl Hash for Expr {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         // Hash based on memory location
-        std::ptr::hash(self, state);
+        self.unique_id().hash(state);
     }
 }
 
