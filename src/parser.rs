@@ -139,7 +139,7 @@ impl Parser {
 
     fn return_statement(&mut self) -> Option<Stmt> {
         let keyword = self.previous();
-        let value = if !self.check(&TokenType::Comma) {
+        let value = if !self.check(&TokenType::Semicolon) {
             Some(self.expression()?)
         } else {
             None
