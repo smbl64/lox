@@ -7,7 +7,7 @@ mod resolver;
 use std::rc::Rc;
 use std::{cell::RefCell, collections::HashMap};
 
-use crate::{prelude::*, runtime_error};
+use crate::{prelude::*, SharedErrorReporter};
 use environment::Environment;
 pub use error::RuntimeError;
 use func::LoxFunction;
@@ -19,6 +19,33 @@ pub struct Interpreter {
     pub globals: Rc<RefCell<Environment>>,
     environment: Rc<RefCell<Environment>>,
     locals: HashMap<usize, usize>, // unique id -> depth
+    error_reporter: Option<SharedErrorReporter>,
+}
+
+impl Interpreter {
+    pub fn new() -> Self {
+        let globals = Rc::new(RefCell::new(Environment::new()));
+        //let environment = Rc::new(RefCell::new(Environment::with_enclosing(globals.clone())));
+        let environment = globals.clone();
+
+        globals
+            .borrow_mut()
+            .define("clock", Object::Callable(native::clock()));
+
+        Self {
+            globals,
+            environment,
+            locals: HashMap::new(),
+            error_reporter: None,
+        }
+    }
+
+    pub fn with_error_reporting(self, error_reporter: SharedErrorReporter) -> Self {
+        Self {
+            error_reporter: Some(error_reporter),
+            ..self
+        }
+    }
 }
 
 impl Visitor<Expr> for Interpreter {
@@ -207,28 +234,21 @@ impl Visitor<Stmt> for Interpreter {
 }
 
 impl Interpreter {
-    pub fn new() -> Self {
-        let globals = Rc::new(RefCell::new(Environment::new()));
-        //let environment = Rc::new(RefCell::new(Environment::with_enclosing(globals.clone())));
-        let environment = globals.clone();
-
-        globals
-            .borrow_mut()
-            .define("clock", Object::Callable(native::clock()));
-
-        Self {
-            globals,
-            environment,
-            locals: HashMap::new(),
-        }
-    }
-
     pub fn interpret(&mut self, statements: &[Stmt]) {
         for stmt in statements {
             if let Err(e) = self.execute(stmt) {
-                runtime_error(e);
+                self.runtime_error(e);
             }
         }
+    }
+
+    fn runtime_error(&self, e: RuntimeError) {
+        if self.error_reporter.is_none() {
+            return;
+        }
+        let reporter = self.error_reporter.as_ref().unwrap();
+        let mut reporter = reporter.borrow_mut();
+        reporter.runtime_error(e);
     }
 
     pub fn execute(&mut self, stmt: &Stmt) -> Result<(), RuntimeError> {

@@ -1,4 +1,4 @@
-use crate::{error, prelude::*};
+use crate::{prelude::*, SharedErrorReporter};
 
 #[derive(Debug)]
 pub struct Scanner {
@@ -8,6 +8,7 @@ pub struct Scanner {
     start: usize,
     current: usize,
     line: i32,
+    error_reporter: Option<SharedErrorReporter>,
 }
 
 impl Scanner {
@@ -19,6 +20,14 @@ impl Scanner {
             current: 0,
             line: 1,
             tokens: Vec::new(),
+            error_reporter: None,
+        }
+    }
+
+    pub fn with_error_reporting(self, error_reporter: SharedErrorReporter) -> Self {
+        Self {
+            error_reporter: Some(error_reporter),
+            ..self
         }
     }
 
@@ -105,8 +114,14 @@ impl Scanner {
             '"' => self.string(),
             '0'..='9' => self.number(),
             c if is_alpha(c) => self.identifier(),
-            _ => error(self.line, "Unexpected character."),
+            _ => self.error(self.line, "Unexpected character."),
         }
+    }
+
+    fn error(&self, line: i32, msg: &str) {
+        let reporter = self.error_reporter.as_ref().unwrap();
+        let mut reporter = reporter.borrow_mut();
+        reporter.error(line, msg);
     }
 
     fn advance(&mut self) -> char {
@@ -166,7 +181,7 @@ impl Scanner {
         }
 
         if self.is_at_end() {
-            error(self.line, "Unterminated string.");
+            self.error(self.line, "Unterminated string.");
             return;
         }
 

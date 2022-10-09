@@ -1,26 +1,11 @@
-use std::error::Error;
-use std::{collections::HashMap, fmt::Display};
+use std::collections::HashMap;
 
 use crate::{
     prelude::{Expr, Stmt, Visitor},
     token::Token,
 };
 
-use super::Interpreter;
-
-#[derive(Debug)]
-pub struct ResolverError {
-    token: Token,
-    msg: String,
-}
-
-impl Display for ResolverError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "[line {}] {}", self.token.line, self.msg)
-    }
-}
-
-impl Error for ResolverError {}
+use super::{error::ResolverError, Interpreter};
 
 #[derive(Debug, Clone, PartialEq, Copy)]
 enum FunctionType {

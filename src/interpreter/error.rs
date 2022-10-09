@@ -1,4 +1,5 @@
 use crate::token::{Object, Token};
+use std::error::Error;
 use std::fmt::Display;
 
 #[derive(Debug, PartialEq)]
@@ -27,3 +28,17 @@ impl Display for RuntimeError {
         }
     }
 }
+
+#[derive(Debug)]
+pub struct ResolverError {
+    pub token: Token,
+    pub msg: String,
+}
+
+impl Display for ResolverError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "[line {}] {}", self.token.line, self.msg)
+    }
+}
+
+impl Error for ResolverError {}

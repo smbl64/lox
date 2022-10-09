@@ -13,21 +13,17 @@ pub mod prelude {
     pub use crate::token::*;
 }
 
-use std::io::Write;
+use std::{cell::RefCell, io::Write, rc::Rc};
 
 use prelude::{Interpreter, Parser, Resolver, RuntimeError};
 
 pub struct Lox {
-    pub had_error: bool,
-    pub had_runtime_error: bool,
     interpreter: Interpreter,
 }
 
 impl Lox {
     pub fn new() -> Self {
         Self {
-            had_error: false,
-            had_runtime_error: false,
             interpreter: Interpreter::new(),
         }
     }
@@ -81,24 +77,26 @@ impl Lox {
     }
 }
 
-fn error(line: i32, message: &str) {
-    report(line, "", message);
+#[derive(Debug)]
+pub struct ErrorReporter {
+    pub had_error: bool,
+    pub had_runtime_error: bool,
 }
 
-fn report(line: i32, location: &str, message: &str) {
-    eprintln!("[line {}] Error {}: {}", line, location, message);
-    // TODO
-    //get_lox().had_error = true;
+impl ErrorReporter {
+    pub fn error(&mut self, line: i32, message: &str) {
+        self.report(line, "", message);
+    }
+
+    pub fn report(&mut self, line: i32, location: &str, message: &str) {
+        eprintln!("[line {}] Error {}: {}", line, location, message);
+        self.had_error = true;
+    }
+
+    pub fn runtime_error(&mut self, e: RuntimeError) {
+        eprintln!("{}", e);
+        self.had_runtime_error = true;
+    }
 }
 
-fn runtime_error(e: RuntimeError) {
-    eprintln!("{}", e);
-    // TODO
-    //get_lox().had_runtime_error = true;
-}
-
-trait ErrorReporter {
-    fn error(line: i32, message: &str);
-    fn report(line: i32, location: &str, message: &str);
-    fn runtime_error(e: RuntimeError);
-}
+type SharedErrorReporter = Rc<RefCell<ErrorReporter>>;

@@ -1,16 +1,27 @@
 use std::rc::Rc;
 
-use crate::prelude::*;
-use crate::report;
+use crate::{prelude::*, SharedErrorReporter};
 
 pub struct Parser {
     tokens: Vec<Token>,
     current: usize,
+    error_reporter: Option<SharedErrorReporter>,
 }
 
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
-        Self { tokens, current: 0 }
+        Self {
+            tokens,
+            current: 0,
+            error_reporter: None,
+        }
+    }
+
+    pub fn with_error_reporting(self, error_reporter: SharedErrorReporter) -> Self {
+        Self {
+            error_reporter: Some(error_reporter),
+            ..self
+        }
     }
 
     pub fn parse(&mut self) -> Option<Vec<Stmt>> {
@@ -468,10 +479,16 @@ impl Parser {
     }
 
     fn error(&self, token: Token, message: &str) {
+        if self.error_reporter.is_none() {
+            return;
+        }
+        let reporter = self.error_reporter.as_ref().unwrap();
+        let mut reporter = reporter.borrow_mut();
+
         if token.token_type == TokenType::EOF {
-            report(token.line, "at end", message);
+            reporter.report(token.line, "at end", message);
         } else {
-            report(token.line, &format!("at '{}'", token.lexeme), message);
+            reporter.report(token.line, &format!("at '{}'", token.lexeme), message);
         }
     }
 
