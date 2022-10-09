@@ -44,7 +44,15 @@ impl Visitor<Expr> for Interpreter {
             }
             Expr::Assignment { name, value } => {
                 let value = self.visit(value.as_ref())?;
-                self.environment.borrow_mut().assign(name, value.clone())?;
+
+                if let Some(&distance) = self.locals.get(&expr.unique_id()) {
+                    self.environment
+                        .borrow_mut()
+                        .assign_at(distance, &name, value.clone())?;
+                } else {
+                    self.globals.borrow_mut().assign(name, value.clone())?;
+                }
+
                 Ok(value)
             }
             Expr::Logical {

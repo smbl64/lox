@@ -45,6 +45,28 @@ impl Environment {
         Ok(())
     }
 
+    pub fn assign_at(
+        &mut self,
+        distance: usize,
+        name: &Token,
+        value: Object,
+    ) -> Result<(), RuntimeError> {
+        if distance == 0 {
+            return self.assign(name, value);
+        }
+
+        match self.ancestor(distance) {
+            None => Err(RuntimeError::UndefinedVariable {
+                name: name.clone(),
+                msg: format!(
+                    "No enclosing environment at {} for '{}'",
+                    distance, name.lexeme
+                ),
+            }),
+            Some(ancestor) => ancestor.borrow_mut().assign(name, value),
+        }
+    }
+
     pub fn get(&self, name: &Token) -> Result<Object, RuntimeError> {
         let value = self.values.get(&name.lexeme).map(|lit| lit.to_owned());
         // Ask one level above if possible
