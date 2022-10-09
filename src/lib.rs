@@ -19,12 +19,16 @@ use prelude::{Interpreter, Parser, Resolver, RuntimeError};
 
 pub struct Lox {
     interpreter: Interpreter,
+    error_reporter: SharedErrorReporter,
 }
 
 impl Lox {
     pub fn new() -> Self {
+        let error_reporter = Rc::new(RefCell::new(ErrorReporter::default()));
+
         Self {
-            interpreter: Interpreter::new(),
+            interpreter: Interpreter::new().with_error_reporting(error_reporter.clone()),
+            error_reporter: error_reporter.clone(),
         }
     }
 }
@@ -58,9 +62,11 @@ impl Lox {
     }
 
     pub fn run(&mut self, input: &str) -> Result<(), anyhow::Error> {
-        let mut scanner = scanner::Scanner::new(input);
+        let mut scanner =
+            scanner::Scanner::new(input).with_error_reporting(self.error_reporter.clone());
         let tokens = scanner.scan_tokens();
-        let mut parser = Parser::new(tokens);
+
+        let mut parser = Parser::new(tokens).with_error_reporting(self.error_reporter.clone());
         match parser.parse() {
             None => return Ok(()),
             Some(stmts) => {
@@ -77,7 +83,7 @@ impl Lox {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ErrorReporter {
     pub had_error: bool,
     pub had_runtime_error: bool,
