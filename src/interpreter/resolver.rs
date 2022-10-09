@@ -1,4 +1,5 @@
-use std::collections::HashMap;
+use std::error::Error;
+use std::{collections::HashMap, fmt::Display};
 
 use crate::{
     prelude::{Expr, Stmt, Visitor},
@@ -11,6 +12,18 @@ use super::Interpreter;
 pub enum ResolverError {
     Generic { token: Token, msg: String },
 }
+
+impl Display for ResolverError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ResolverError::Generic { token, msg } => {
+                write!(f, "[line {}] {}", token.line, msg)
+            }
+        }
+    }
+}
+
+impl Error for ResolverError {}
 
 pub struct Resolver<'i> {
     interpreter: &'i mut Interpreter,
@@ -109,7 +122,7 @@ impl<'a> Resolver<'a> {
         self.scopes.pop();
     }
 
-    fn define(&mut self, name: &Token) {
+    fn declare(&mut self, name: &Token) {
         if self.scopes.is_empty() {
             return;
         }
@@ -119,7 +132,7 @@ impl<'a> Resolver<'a> {
         last.insert(name.lexeme.clone(), false);
     }
 
-    fn declare(&mut self, name: &Token) {
+    fn define(&mut self, name: &Token) {
         if self.scopes.is_empty() {
             return;
         }
@@ -129,7 +142,7 @@ impl<'a> Resolver<'a> {
         last.insert(name.lexeme.clone(), true);
     }
 
-    fn resolve<I, R>(&mut self, statements: I) -> Result<(), ResolverError>
+    pub fn resolve<I, R>(&mut self, statements: I) -> Result<(), ResolverError>
     where
         I: IntoIterator<Item = R>,
         R: AsRef<Stmt>,
