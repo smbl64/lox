@@ -226,7 +226,7 @@ impl Interpreter {
     pub fn interpret(&mut self, statements: &[Stmt]) {
         for stmt in statements {
             if let Err(e) = self.execute(stmt) {
-                runtime_error(e)
+                runtime_error(e);
             }
         }
     }

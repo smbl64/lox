@@ -22,10 +22,17 @@ impl Display for ResolverError {
 
 impl Error for ResolverError {}
 
+#[derive(Debug, Clone, PartialEq, Copy)]
+enum FunctionType {
+    None,
+    Function,
+}
+
 /// Resolver uses static analysis to bind local variables to the correct envorinment.
 pub struct Resolver<'i> {
     interpreter: &'i mut Interpreter,
     scopes: Vec<HashMap<String, bool>>,
+    current_function: FunctionType,
 }
 
 impl<'i> Resolver<'i> {
@@ -33,6 +40,7 @@ impl<'i> Resolver<'i> {
         Self {
             interpreter,
             scopes: vec![],
+            current_function: FunctionType::None,
         }
     }
 }
@@ -66,6 +74,9 @@ impl<'a> Visitor<Stmt> for Resolver<'a> {
                 self.declare(name)?;
                 self.define(name);
 
+                let enclosing_func = self.current_function;
+                self.current_function = FunctionType::Function;
+
                 // Resolve function's body
                 self.begin_scope();
                 for param in params {
@@ -75,6 +86,8 @@ impl<'a> Visitor<Stmt> for Resolver<'a> {
 
                 self.resolve(body)?;
                 self.end_scope();
+                self.current_function = enclosing_func;
+
                 Ok(())
             }
             Stmt::Expression { expr } => self.resolve_expr(expr),
@@ -96,7 +109,14 @@ impl<'a> Visitor<Stmt> for Resolver<'a> {
                 }
                 Ok(())
             }
-            Stmt::Return { keyword: _, value } => {
+            Stmt::Return { keyword, value } => {
+                if self.current_function == FunctionType::None {
+                    return Err(ResolverError {
+                        token: keyword.clone(),
+                        msg: "Can't return from top-level code".to_owned(),
+                    });
+                }
+
                 if let Some(expr) = value {
                     self.resolve_expr(expr)?;
                 }
