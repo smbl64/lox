@@ -56,7 +56,7 @@ impl<'a> Visitor<Stmt> for Resolver<'a> {
             Stmt::Var { name, initializer } => {
                 // We use a 3 step process, so users can't use the same variable in
                 // variable definition: declare -> initialize -> define
-                self.declare(name);
+                self.declare(name)?;
                 if let Some(initializer) = initializer {
                     self.resolve_expr(initializer)?;
                 }
@@ -66,13 +66,13 @@ impl<'a> Visitor<Stmt> for Resolver<'a> {
             Stmt::Function { name, params, body } => {
                 // Unlike variables, we declare and define functions before processing
                 // their body. This way, functions can recursively call themselves.
-                self.declare(name);
+                self.declare(name)?;
                 self.define(name);
 
                 // Resolve function's body
                 self.begin_scope();
                 for param in params {
-                    self.declare(param);
+                    self.declare(param)?;
                     self.define(param);
                 }
 
@@ -123,14 +123,23 @@ impl<'a> Resolver<'a> {
         self.scopes.pop();
     }
 
-    fn declare(&mut self, name: &Token) {
+    fn declare(&mut self, name: &Token) -> Result<(), ResolverError> {
         if self.scopes.is_empty() {
-            return;
+            return Ok(());
         }
 
         let last_idx = self.scopes.len() - 1;
         let last = self.scopes.get_mut(last_idx).unwrap();
+
+        if last.contains_key(&name.lexeme) {
+            return Err(ResolverError::Generic {
+                token: name.clone(),
+                msg: "Already a variable with this name in this scope.".to_owned(),
+            });
+        }
+
         last.insert(name.lexeme.clone(), false);
+        Ok(())
     }
 
     fn define(&mut self, name: &Token) {
