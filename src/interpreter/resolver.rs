@@ -9,17 +9,14 @@ use crate::{
 use super::Interpreter;
 
 #[derive(Debug)]
-pub enum ResolverError {
-    Generic { token: Token, msg: String },
+pub struct ResolverError {
+    token: Token,
+    msg: String,
 }
 
 impl Display for ResolverError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ResolverError::Generic { token, msg } => {
-                write!(f, "[line {}] {}", token.line, msg)
-            }
-        }
+        write!(f, "[line {}] {}", self.token.line, self.msg)
     }
 }
 
@@ -132,7 +129,7 @@ impl<'a> Resolver<'a> {
         let last = self.scopes.get_mut(last_idx).unwrap();
 
         if last.contains_key(&name.lexeme) {
-            return Err(ResolverError::Generic {
+            return Err(ResolverError {
                 token: name.clone(),
                 msg: "Already a variable with this name in this scope.".to_owned(),
             });
@@ -185,7 +182,7 @@ impl<'a> Visitor<Expr> for Resolver<'a> {
                     let scope = self.scopes.get(last_idx).unwrap();
 
                     if let Some(false) = scope.get(&name.lexeme) {
-                        return Err(ResolverError::Generic {
+                        return Err(ResolverError {
                             token: name.clone(),
                             msg: "Can't read local variable in its own initialization".to_owned(),
                         });
