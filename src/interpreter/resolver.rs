@@ -12,13 +12,13 @@ pub enum ResolverError {
     Generic { token: Token, msg: String },
 }
 
-pub struct Resolver {
-    interpreter: Interpreter,
+pub struct Resolver<'i> {
+    interpreter: &'i mut Interpreter,
     scopes: Vec<HashMap<String, bool>>,
 }
 
-impl Resolver {
-    pub fn new(interpreter: Interpreter) -> Self {
+impl<'i> Resolver<'i> {
+    pub fn new(interpreter: &'i mut Interpreter) -> Self {
         Self {
             interpreter,
             scopes: vec![],
@@ -26,7 +26,7 @@ impl Resolver {
     }
 }
 
-impl Visitor<Stmt> for Resolver {
+impl<'a> Visitor<Stmt> for Resolver<'a> {
     type Error = ResolverError;
     type Result = ();
 
@@ -85,7 +85,7 @@ impl Visitor<Stmt> for Resolver {
                 }
                 Ok(())
             }
-            Stmt::Return { keyword, value } => {
+            Stmt::Return { keyword: _, value } => {
                 if let Some(expr) = value {
                     self.resolve_expr(expr)?;
                 }
@@ -100,7 +100,7 @@ impl Visitor<Stmt> for Resolver {
     }
 }
 
-impl Resolver {
+impl<'a> Resolver<'a> {
     fn begin_scope(&mut self) {
         self.scopes.push(HashMap::new());
     }
@@ -150,7 +150,7 @@ impl Resolver {
     }
 }
 
-impl Visitor<Expr> for Resolver {
+impl<'a> Visitor<Expr> for Resolver<'a> {
     type Error = ResolverError;
     type Result = ();
 
@@ -169,7 +169,7 @@ impl Visitor<Expr> for Resolver {
                     }
                 }
 
-                self.resolve_local(input, name);
+                self.resolve_local(input, name)?;
                 Ok(())
             }
             Expr::Assignment { name, value } => {
@@ -178,7 +178,7 @@ impl Visitor<Expr> for Resolver {
             }
             Expr::Binary {
                 left,
-                operator,
+                operator: _,
                 right,
             } => {
                 self.resolve_expr(left)?;
@@ -186,7 +186,7 @@ impl Visitor<Expr> for Resolver {
             }
             Expr::Call {
                 callee,
-                paren,
+                paren: _,
                 arguments,
             } => {
                 self.resolve_expr(&callee)?;
@@ -197,10 +197,10 @@ impl Visitor<Expr> for Resolver {
             }
             Expr::Grouping { expr } => self.resolve_expr(expr),
             Expr::Literal { value: _ } => Ok(()),
-            Expr::Unary { operator, right } => self.resolve_expr(right),
+            Expr::Unary { operator: _, right } => self.resolve_expr(right),
             Expr::Logical {
                 left,
-                operator,
+                operator: _,
                 right,
             } => {
                 self.resolve_expr(left)?;
@@ -210,7 +210,7 @@ impl Visitor<Expr> for Resolver {
     }
 }
 
-impl Resolver {
+impl<'a> Resolver<'a> {
     fn resolve_local(&mut self, input: &Expr, name: &Token) -> Result<(), ResolverError> {
         for (i, scope) in self.scopes.iter().enumerate().rev() {
             if scope.contains_key(&name.lexeme) {

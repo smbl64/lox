@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{hash::Hash, rc::Rc};
 
 use crate::token::{Object, Token};
 
@@ -8,7 +8,7 @@ pub trait Visitor<I> {
     fn visit(&mut self, input: &I) -> Result<Self::Result, Self::Error>;
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Expr {
     Binary {
         left: Box<Expr>,
@@ -44,6 +44,13 @@ pub enum Expr {
     },
 }
 
+impl Hash for Expr {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        // Hash based on memory location
+        std::ptr::hash(self, state);
+    }
+}
+
 impl Expr {
     pub fn int_literal(v: f64) -> Expr {
         Expr::Literal {
@@ -55,6 +62,11 @@ impl Expr {
         Expr::Literal {
             value: Object::String(s.to_owned()),
         }
+    }
+
+    pub fn unique_id(&self) -> usize {
+        let y = std::ptr::addr_of!(*self) as usize;
+        return y;
     }
 }
 

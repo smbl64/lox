@@ -6,7 +6,7 @@ use std::{
 use crate::prelude::{Interpreter, RuntimeError};
 
 #[allow(dead_code)]
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum TokenType {
     // Single-character tokens.
     LeftParen,
@@ -89,6 +89,8 @@ impl PartialEq for Object {
     }
 }
 
+impl Eq for Object {}
+
 impl Object {
     pub fn number(&self) -> Option<f64> {
         match self {
@@ -128,7 +130,7 @@ impl Display for Object {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Token {
     pub token_type: TokenType,
     pub lexeme: String,

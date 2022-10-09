@@ -4,19 +4,21 @@ mod func;
 mod native;
 mod resolver;
 
-use std::cell::RefCell;
 use std::rc::Rc;
+use std::{cell::RefCell, collections::HashMap};
 
 use crate::{prelude::*, runtime_error};
 use environment::Environment;
 pub use error::RuntimeError;
 use func::LoxFunction;
+pub use resolver::Resolver;
 
 type InterpreterResult = Result<Object, RuntimeError>;
 
 pub struct Interpreter {
     pub globals: Rc<RefCell<Environment>>,
     environment: Rc<RefCell<Environment>>,
+    locals: HashMap<usize, usize>, // unique id -> depth
 }
 
 impl Visitor<Expr> for Interpreter {
@@ -203,6 +205,7 @@ impl Interpreter {
         Self {
             globals,
             environment,
+            locals: HashMap::new(),
         }
     }
 
@@ -331,6 +334,10 @@ impl Interpreter {
                 msg: "Operands must be numbers".to_owned(),
             })
         }
+    }
+
+    fn resolve(&mut self, input: &Expr, depth: usize) {
+        self.locals.insert(input.unique_id(), depth);
     }
 }
 
