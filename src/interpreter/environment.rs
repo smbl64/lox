@@ -58,4 +58,32 @@ impl Environment {
             msg: format!("Undefined variable '{}'", name.lexeme),
         })
     }
+
+    pub fn get_at(&self, distance: usize, name: &Token) -> Result<Object, RuntimeError> {
+        if distance == 0 {
+            return self.get(name);
+        }
+
+        match self.ancestor(distance) {
+            None => Err(RuntimeError::UndefinedVariable {
+                name: name.clone(),
+                msg: format!(
+                    "No enclosing environment at {} for '{}'",
+                    distance, name.lexeme
+                ),
+            }),
+            Some(ancestor) => ancestor.borrow().get(name),
+        }
+    }
+
+    fn ancestor(&self, distance: usize) -> Option<Rc<RefCell<Environment>>> {
+        let parent = self.enclosing.clone()?;
+        let mut env = parent.clone();
+
+        for _ in 1..distance {
+            let parent = env.borrow().enclosing.clone()?;
+            env = parent.clone();
+        }
+        Some(env)
+    }
 }

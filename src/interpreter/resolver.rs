@@ -25,6 +25,7 @@ impl Display for ResolverError {
 
 impl Error for ResolverError {}
 
+/// Resolver uses static analysis to bind local variables to the correct envorinment.
 pub struct Resolver<'i> {
     interpreter: &'i mut Interpreter,
     scopes: Vec<HashMap<String, bool>>,

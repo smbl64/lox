@@ -35,7 +35,13 @@ impl Visitor<Expr> for Interpreter {
                 operator,
                 right,
             } => self.visit_binary(left, operator, right),
-            Expr::Variable { name } => self.environment.borrow().get(name),
+            Expr::Variable { name } => {
+                if let Some(&distance) = self.locals.get(&expr.unique_id()) {
+                    self.environment.borrow().get_at(distance, &name)
+                } else {
+                    self.globals.borrow().get(name)
+                }
+            }
             Expr::Assignment { name, value } => {
                 let value = self.visit(value.as_ref())?;
                 self.environment.borrow_mut().assign(name, value.clone())?;
