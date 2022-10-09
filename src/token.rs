@@ -58,7 +58,7 @@ pub enum TokenType {
     EOF,
 }
 
-pub trait Callable: Debug {
+pub trait Callable: Debug + Display {
     fn arity(&self) -> usize;
     fn call(
         &self,
@@ -125,7 +125,7 @@ impl Display for Object {
             }
             Self::String(s) => write!(f, "{}", s),
             Self::Null => write!(f, "nil"),
-            Self::Callable(c) => write!(f, "{:?}", c),
+            Self::Callable(c) => write!(f, "{}", c),
         }
     }
 }

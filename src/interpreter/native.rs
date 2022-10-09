@@ -1,5 +1,8 @@
 use super::*;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::{
+    fmt::Display,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 #[derive(Debug)]
 struct Clock;
@@ -20,6 +23,12 @@ impl Callable for Clock {
             .expect("Time went backward");
 
         Ok(Object::Number(since_epoch.as_millis() as f64 / 1000.0))
+    }
+}
+
+impl Display for Clock {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "<native clock>")
     }
 }
 
