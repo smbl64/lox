@@ -178,7 +178,7 @@ impl Visitor<Stmt> for Interpreter {
             Stmt::Print { exprs } => {
                 for expr in exprs {
                     let value = self.evaluate(expr)?;
-                    print!("{} ", value);
+                    print!("{}", value);
                 }
 
                 println!();
