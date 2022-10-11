@@ -117,11 +117,7 @@ impl Display for Object {
         match self {
             Self::Boolean(b) => write!(f, "{}", b),
             Self::Number(n) => {
-                if n.fract() == 0.0 {
-                    write!(f, "{}", *n as i64)
-                } else {
-                    write!(f, "{}", n)
-                }
+                write!(f, "{}", n)
             }
             Self::String(s) => write!(f, "{}", s),
             Self::Null => write!(f, "nil"),

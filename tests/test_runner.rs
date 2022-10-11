@@ -24,7 +24,10 @@ fn run_all_files() {
 
         let expect = find_expects(filename);
         let expected = expect.join("\n");
+
         let output = run_file(filename);
+        //assert!(output.status.success());
+
         let stdout = String::from_utf8(output.stdout).unwrap();
         let stdout = stdout.trim_end();
 
@@ -43,7 +46,7 @@ fn run_file(filename: &Path) -> Output {
 }
 
 fn is_blacklisted(filename: &str) -> bool {
-    let blacklist = vec!["method", "benchmark"];
+    let blacklist = vec!["benchmark", "field", "method"];
 
     for s in blacklist {
         if filename.contains(s) {
