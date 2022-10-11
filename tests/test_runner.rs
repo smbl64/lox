@@ -46,7 +46,17 @@ fn run_file(filename: &Path) -> Output {
 }
 
 fn is_blacklisted(filename: &str) -> bool {
-    let blacklist = vec!["benchmark", "field", "method"];
+    let blacklist = vec![
+        "394.lox",
+        "benchmark/",
+        "class", // Without slash
+        "constructor/",
+        "field/",
+        "inheritance/",
+        "method", // Without slash
+        "super/",
+        "this/",
+    ];
 
     for s in blacklist {
         if filename.contains(s) {
