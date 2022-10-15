@@ -269,19 +269,23 @@ impl Parser {
     }
 
     fn expression(&mut self) -> Option<Expr> {
-        self.assigment()
+        self.assignment()
     }
 
-    fn assigment(&mut self) -> Option<Expr> {
+    fn assignment(&mut self) -> Option<Expr> {
         let expr = self.or()?;
 
         if self.match_tt(&[TokenType::Equal]) {
             let equals = self.previous();
-            let value = self.assigment()?;
+            let value = Box::new(self.assignment()?);
+
             if let Expr::Variable { name } = expr {
-                return Some(Expr::Assignment {
+                return Some(Expr::Assignment { name, value });
+            } else if let Expr::Get { object, name } = expr {
+                return Some(Expr::Set {
+                    object,
                     name,
-                    value: Box::new(value),
+                    value,
                 });
             }
 

@@ -11,7 +11,7 @@ pub enum Object {
     String(String),
     Callable(Rc<dyn Callable>),
     Class(Rc<RefCell<Class>>),
-    Instance(Instance),
+    Instance(Rc<RefCell<Instance>>),
 }
 
 impl PartialEq for Object {
@@ -61,7 +61,7 @@ impl Display for Object {
             Self::Null => write!(f, "nil"),
             Self::Callable(c) => write!(f, "{}", c),
             Self::Class(c) => write!(f, "{}", c.borrow()),
-            Self::Instance(i) => write!(f, "{}", i),
+            Self::Instance(i) => write!(f, "{}", i.borrow()),
         }
     }
 }

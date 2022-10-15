@@ -76,7 +76,25 @@ impl Visitor<Expr> for Interpreter {
             Expr::Get { object, name } => {
                 let object = self.evaluate(&object)?;
                 if let Object::Instance(instance) = object {
-                    instance.get(name)
+                    instance.borrow().get(name)
+                } else {
+                    Err(RuntimeError::InvalidOperand {
+                        operator: name.clone(),
+                        msg: "Only instances have properties".to_owned(),
+                    })
+                }
+            }
+            Expr::Set {
+                object,
+                name,
+                value,
+            } => {
+                let value = self.evaluate(value)?;
+                let object = self.evaluate(&object)?;
+
+                if let Object::Instance(instance) = object {
+                    instance.borrow_mut().set(name, value.clone());
+                    Ok(value)
                 } else {
                     Err(RuntimeError::InvalidOperand {
                         operator: name.clone(),
@@ -139,7 +157,7 @@ impl Visitor<Expr> for Interpreter {
                         }
 
                         let instance = Class::construct(class.clone());
-                        Ok(Object::Instance(instance))
+                        Ok(Object::Instance(Rc::new(RefCell::new(instance))))
                     }
                     _ => Err(RuntimeError::InvalidOperand {
                         operator: paren.clone(),

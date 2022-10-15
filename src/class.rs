@@ -56,6 +56,14 @@ impl Instance {
             })
         }
     }
+
+    pub fn set(&mut self, field: &Token, value: Object) {
+        self.fields.insert(field.lexeme.clone(), value);
+    }
+
+    pub fn unique_id(&self) -> usize {
+        std::ptr::addr_of!(*self) as usize
+    }
 }
 
 impl Display for Instance {

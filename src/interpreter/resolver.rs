@@ -219,14 +219,23 @@ impl<'a> Visitor<Expr> for Resolver<'a> {
                 paren: _,
                 arguments,
             } => {
-                self.resolve_expr(&callee)?;
+                self.resolve_expr(callee)?;
                 for arg in arguments {
-                    self.resolve_expr(&arg)?;
+                    self.resolve_expr(arg)?;
                 }
                 Ok(())
             }
             Expr::Get { object, name: _ } => {
-                self.resolve_expr(&object)?;
+                self.resolve_expr(object)?;
+                Ok(())
+            }
+            Expr::Set {
+                object,
+                name: _,
+                value,
+            } => {
+                self.resolve_expr(object)?;
+                self.resolve_expr(value)?;
                 Ok(())
             }
             Expr::Grouping { expr } => self.resolve_expr(expr),

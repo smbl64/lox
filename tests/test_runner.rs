@@ -51,7 +51,6 @@ fn is_blacklisted(filename: &str) -> bool {
         "benchmark/",
         "class", // Without slash
         "constructor/",
-        "field/",
         "inheritance/",
         "method", // Without slash
         "super/",
