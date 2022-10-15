@@ -14,11 +14,18 @@ enum FunctionType {
     Method,
 }
 
+#[derive(Debug, Clone, PartialEq, Copy)]
+enum ClassType {
+    None,
+    Class,
+}
+
 /// Resolver uses static analysis to bind local variables to the correct envorinment.
 pub struct Resolver<'i> {
     interpreter: &'i mut Interpreter,
     scopes: Vec<HashMap<String, bool>>,
     current_function: FunctionType,
+    current_class: ClassType,
 }
 
 impl<'i> Resolver<'i> {
@@ -27,6 +34,7 @@ impl<'i> Resolver<'i> {
             interpreter,
             scopes: vec![],
             current_function: FunctionType::None,
+            current_class: ClassType::None,
         }
     }
 }
@@ -55,6 +63,9 @@ impl<'a> Visitor<Stmt> for Resolver<'a> {
                 Ok(())
             }
             Stmt::Class { name: _, methods } => {
+                let enclosing_class = self.current_class;
+                self.current_class = ClassType::Class;
+
                 self.begin_scope();
                 // Safe to unwrap, because we're calling begin_scope before it
                 self.peek_mut_scope()
@@ -66,6 +77,7 @@ impl<'a> Visitor<Stmt> for Resolver<'a> {
                 }
 
                 self.end_scope();
+                self.current_class = enclosing_class;
                 Ok(())
             }
             Stmt::Function {
@@ -190,6 +202,13 @@ impl<'a> Resolver<'a> {
     }
 
     fn resolve_this(&mut self, expr: &Expr, keyword: &Token) -> Result<(), ResolverError> {
+        if self.current_class == ClassType::None {
+            return Err(ResolverError {
+                token: Some(keyword.clone()),
+                msg: "Can't use 'this' outside of a class".to_owned(),
+            });
+        }
+
         self.resolve_local(expr, keyword)
     }
 

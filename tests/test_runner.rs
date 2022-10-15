@@ -54,7 +54,6 @@ fn is_blacklisted(filename: &str) -> bool {
         "inheritance/",
         "method", // Without slash
         "super/",
-        "this/",
     ];
 
     for s in blacklist {
