@@ -73,6 +73,17 @@ impl Visitor<Expr> for Interpreter {
 
                 Ok(value)
             }
+            Expr::Get { object, name } => {
+                let object = self.evaluate(&object)?;
+                if let Object::Instance(instance) = object {
+                    instance.get(name)
+                } else {
+                    Err(RuntimeError::InvalidOperand {
+                        operator: name.clone(),
+                        msg: "Only instances have properties".to_owned(),
+                    })
+                }
+            }
             Expr::Logical {
                 left,
                 operator,

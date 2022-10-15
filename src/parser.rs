@@ -407,6 +407,12 @@ impl Parser {
         loop {
             if self.match_tt(&[TokenType::LeftParen]) {
                 expr = self.finish_call(expr)?;
+            } else if self.match_tt(&[TokenType::Dot]) {
+                let name = self.consume(TokenType::Identifier, "Expect property name after '.'")?;
+                expr = Expr::Get {
+                    object: Box::new(expr),
+                    name,
+                };
             } else {
                 break;
             }

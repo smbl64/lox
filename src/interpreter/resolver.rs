@@ -225,6 +225,10 @@ impl<'a> Visitor<Expr> for Resolver<'a> {
                 }
                 Ok(())
             }
+            Expr::Get { object, name: _ } => {
+                self.resolve_expr(&object)?;
+                Ok(())
+            }
             Expr::Grouping { expr } => self.resolve_expr(expr),
             Expr::Literal { value: _ } => Ok(()),
             Expr::Unary { operator: _, right } => self.resolve_expr(right),

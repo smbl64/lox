@@ -1,6 +1,11 @@
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::fmt::Display;
 use std::rc::Rc;
+
+use crate::object::Object;
+use crate::prelude::RuntimeError;
+use crate::token::Token;
 
 #[derive(Debug, Clone)]
 pub struct Class {
@@ -30,11 +35,26 @@ impl Class {
 #[derive(Debug, Clone)]
 pub struct Instance {
     class: Rc<RefCell<Class>>,
+    fields: HashMap<String, Object>,
 }
 
 impl Instance {
     pub fn new(class: Rc<RefCell<Class>>) -> Self {
-        Self { class }
+        Self {
+            class,
+            fields: HashMap::new(),
+        }
+    }
+
+    pub fn get(&self, field: &Token) -> Result<Object, RuntimeError> {
+        if let Some(object) = self.fields.get(&field.lexeme) {
+            Ok(object.clone())
+        } else {
+            Err(RuntimeError::UndefinedVariable {
+                name: field.clone(),
+                msg: format!("Undefined property '{}'", field.lexeme),
+            })
+        }
     }
 }
 

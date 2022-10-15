@@ -20,6 +20,10 @@ pub enum Expr {
         paren: Token,
         arguments: Vec<Expr>,
     },
+    Get {
+        object: Box<Expr>,
+        name: Token,
+    },
     Grouping {
         expr: Box<Expr>,
     },
@@ -158,6 +162,7 @@ impl Visitor<Expr> for AstPrinter {
                 paren: _,
                 arguments,
             } => format!("{:?}({:?})", self.visit(callee)?, arguments),
+            Expr::Get { object, name } => format!("{:?}.{}", self.visit(object)?, name),
         };
         Ok(s)
     }
