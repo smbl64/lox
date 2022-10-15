@@ -53,13 +53,7 @@ impl Visitor<Expr> for Interpreter {
                 operator,
                 right,
             } => self.visit_binary(left, operator, right),
-            Expr::Variable { name } => {
-                if let Some(&distance) = self.locals.get(&expr.unique_id()) {
-                    self.environment.borrow().get_at(distance, &name)
-                } else {
-                    self.globals.borrow().get(name)
-                }
-            }
+            Expr::Variable { name } => self.lookup_variable(name, expr),
             Expr::Assignment { name, value } => {
                 let value = self.visit(value.as_ref())?;
 
@@ -75,8 +69,8 @@ impl Visitor<Expr> for Interpreter {
             }
             Expr::Get { object, name } => {
                 let object = self.evaluate(&object)?;
-                if let Object::Instance(instance) = object {
-                    instance.borrow().get(name)
+                if let Object::Instance(ref instance) = object {
+                    instance.borrow().get(name, &object)
                 } else {
                     Err(RuntimeError::InvalidOperand {
                         operator: name.clone(),
@@ -102,6 +96,7 @@ impl Visitor<Expr> for Interpreter {
                     })
                 }
             }
+            Expr::This { keyword } => self.lookup_variable(keyword, expr),
             Expr::Logical {
                 left,
                 operator,
@@ -406,6 +401,14 @@ impl Interpreter {
 
             // Unreachable code
             _ => Ok(Object::Null),
+        }
+    }
+
+    fn lookup_variable(&self, name: &Token, expr: &Expr) -> Result<Object, RuntimeError> {
+        if let Some(&distance) = self.locals.get(&expr.unique_id()) {
+            self.environment.borrow().get_at(distance, &name)
+        } else {
+            self.globals.borrow().get(name)
         }
     }
 

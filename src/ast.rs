@@ -29,6 +29,9 @@ pub enum Expr {
         name: Token,
         value: Box<Expr>,
     },
+    This {
+        keyword: Token,
+    },
     Grouping {
         expr: Box<Expr>,
     },
@@ -167,6 +170,7 @@ impl Visitor<Expr> for AstPrinter {
                 paren: _,
                 arguments,
             } => format!("{:?}({:?})", self.visit(callee)?, arguments),
+            Expr::This { keyword } => format!("{}", keyword),
             Expr::Get { object, name } => format!("{:?}.{}", self.visit(object)?, name),
             Expr::Set {
                 object,

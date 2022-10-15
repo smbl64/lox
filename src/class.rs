@@ -52,10 +52,12 @@ impl Instance {
         }
     }
 
-    pub fn get(&self, field: &Token) -> Result<Object, RuntimeError> {
+    pub fn get(&self, field: &Token, instance: &Object) -> Result<Object, RuntimeError> {
         if let Some(object) = self.fields.get(&field.lexeme) {
             Ok(object.clone())
         } else if let Some(function) = self.class.borrow().find_method(&field.lexeme) {
+            let function = function.bind(instance.clone());
+
             Ok(Object::Callable(function))
         } else {
             Err(RuntimeError::UndefinedVariable {

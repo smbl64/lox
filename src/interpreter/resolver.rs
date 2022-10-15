@@ -55,9 +55,17 @@ impl<'a> Visitor<Stmt> for Resolver<'a> {
                 Ok(())
             }
             Stmt::Class { name: _, methods } => {
+                self.begin_scope();
+                // Safe to unwrap, because we're calling begin_scope before it
+                self.peek_mut_scope()
+                    .unwrap()
+                    .insert("this".to_owned(), true);
+
                 for method in methods {
                     self.resolve_function(method, FunctionType::Method)?;
                 }
+
+                self.end_scope();
                 Ok(())
             }
             Stmt::Function {
@@ -142,6 +150,7 @@ impl<'a> Resolver<'a> {
     }
 
     fn define(&mut self, name: &Token) {
+        // TODO Refactor to use `peek_mut_scope` here and other places
         if self.scopes.is_empty() {
             return;
         }
@@ -149,6 +158,15 @@ impl<'a> Resolver<'a> {
         let last_idx = self.scopes.len() - 1;
         let last = self.scopes.get_mut(last_idx).unwrap();
         last.insert(name.lexeme.clone(), true);
+    }
+
+    fn peek_mut_scope(&mut self) -> Option<&mut HashMap<String, bool>> {
+        if self.scopes.is_empty() {
+            return None;
+        }
+
+        let last_idx = self.scopes.len() - 1;
+        Some(self.scopes.get_mut(last_idx).unwrap())
     }
 
     pub fn resolve<I, R>(&mut self, statements: I) -> Result<(), ResolverError>
@@ -169,6 +187,10 @@ impl<'a> Resolver<'a> {
 
     fn resolve_expr(&mut self, expr: &Expr) -> Result<(), ResolverError> {
         self.visit(expr)
+    }
+
+    fn resolve_this(&mut self, expr: &Expr, keyword: &Token) -> Result<(), ResolverError> {
+        self.resolve_local(expr, keyword)
     }
 
     fn resolve_function(
@@ -262,6 +284,7 @@ impl<'a> Visitor<Expr> for Resolver<'a> {
                 self.resolve_expr(value)?;
                 Ok(())
             }
+            Expr::This { keyword } => self.resolve_this(input, keyword),
             Expr::Grouping { expr } => self.resolve_expr(expr),
             Expr::Literal { value: _ } => Ok(()),
             Expr::Unary { operator: _, right } => self.resolve_expr(right),

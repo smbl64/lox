@@ -475,6 +475,11 @@ impl Parser {
                     .expect("expecting a number or string here"),
             });
         }
+        if self.match_tt(&[TokenType::This]) {
+            return Some(Expr::This {
+                keyword: self.previous(),
+            });
+        }
         if self.match_tt(&[TokenType::Identifier]) {
             return Some(Expr::Variable {
                 name: self.previous(),

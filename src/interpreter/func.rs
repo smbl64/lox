@@ -1,4 +1,4 @@
-use std::{cell::RefCell, fmt::Display, rc::Rc};
+use std::{borrow::BorrowMut, cell::RefCell, fmt::Display, rc::Rc};
 
 use crate::prelude::*;
 
@@ -23,6 +23,19 @@ impl LoxFunction {
             body: body.to_vec(),
             closure,
         }
+    }
+
+    pub fn bind(&self, instance: Object) -> Rc<LoxFunction> {
+        let mut env = Environment::with_enclosing(self.closure.clone());
+        env.borrow_mut().define("this", instance);
+        let env = Rc::new(RefCell::new(env));
+
+        Rc::new(LoxFunction::new(
+            self.name.clone(),
+            self.params.clone(),
+            &self.body,
+            env,
+        ))
     }
 }
 
