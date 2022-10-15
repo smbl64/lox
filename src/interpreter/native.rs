@@ -1,3 +1,5 @@
+use crate::{object::Object, token::Callable};
+
 use super::*;
 use std::{
     fmt::Display,
