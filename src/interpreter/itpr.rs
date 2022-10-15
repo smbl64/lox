@@ -144,15 +144,25 @@ impl Visitor<Expr> for Interpreter {
                         callable.call(self, args)
                     }
                     Object::Class(class) => {
-                        if 0 != arguments.len() {
+                        let arity = class.borrow().arity();
+                        if arity != arguments.len() {
                             return Err(RuntimeError::InvalidOperand {
                                 operator: paren.clone(),
-                                msg: format!("Expected {} arguments, got {}", 0, arguments.len()),
+                                msg: format!(
+                                    "Expected {} arguments, got {}",
+                                    arity,
+                                    arguments.len()
+                                ),
                             });
                         }
 
-                        let instance = Class::construct(class.clone());
-                        Ok(Object::Instance(Rc::new(RefCell::new(instance))))
+                        // Evaluate all arguments
+                        let mut args = vec![];
+                        for arg in arguments {
+                            args.push(self.evaluate(arg)?);
+                        }
+
+                        Class::construct(class.clone(), args, self).map(|i| Object::Instance(i))
                     }
                     _ => Err(RuntimeError::InvalidOperand {
                         operator: paren.clone(),

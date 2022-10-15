@@ -3,9 +3,10 @@ use std::collections::HashMap;
 use std::fmt::Display;
 use std::rc::Rc;
 
+use crate::interpreter::Interpreter;
 use crate::object::Object;
 use crate::prelude::{LoxFunction, RuntimeError};
-use crate::token::Token;
+use crate::token::{Callable, Token};
 
 #[derive(Debug, Clone)]
 pub struct Class {
@@ -29,12 +30,32 @@ impl Display for Class {
 }
 
 impl Class {
-    pub fn construct(class: Rc<RefCell<Class>>) -> Instance {
-        Instance::new(class)
+    pub fn construct(
+        class: Rc<RefCell<Class>>,
+        arguments: Vec<Object>,
+        interpreter: &mut Interpreter,
+    ) -> Result<Rc<RefCell<Instance>>, RuntimeError> {
+        let instance = Rc::new(RefCell::new(Instance::new(class.clone())));
+
+        if let Some(initializer) = class.borrow().find_method("init") {
+            initializer
+                .bind(Object::Instance(instance.clone()))
+                .call(interpreter, arguments)?;
+        }
+
+        Ok(instance.clone())
     }
 
     pub fn find_method(&self, name: &str) -> Option<Rc<LoxFunction>> {
         self.methods.get(name).map(|f| f.clone())
+    }
+
+    pub fn arity(&self) -> usize {
+        if let Some(initializer) = self.find_method("init") {
+            initializer.arity()
+        } else {
+            0
+        }
     }
 }
 
