@@ -178,15 +178,29 @@ impl Visitor<Stmt> for Interpreter {
             Stmt::Expression { expr } => {
                 self.evaluate(expr)?;
             }
-            Stmt::Class { name, methods: _ } => {
-                self.environment
-                    .borrow_mut()
-                    .define(&name.lexeme, Object::Null);
+            Stmt::Class { name, methods } => {
+                let mut env_mut = self.environment.borrow_mut();
+                env_mut.define(&name.lexeme, Object::Null);
 
-                let class = Rc::new(RefCell::new(Class::new(&name.lexeme)));
-                self.environment
-                    .borrow_mut()
-                    .assign(name, Object::Class(class))?;
+                let mut method_funcs = HashMap::new();
+                for method in methods {
+                    if let Stmt::Function { name, params, body } = method {
+                        method_funcs.insert(
+                            name.lexeme.clone(),
+                            Rc::new(LoxFunction::new(
+                                name.clone(),
+                                params.to_vec(),
+                                body,
+                                self.environment.clone(),
+                            )),
+                        );
+                    } else {
+                        todo!()
+                    }
+                }
+
+                let class = Rc::new(RefCell::new(Class::new(&name.lexeme, method_funcs)));
+                env_mut.assign(name, Object::Class(class))?;
             }
             Stmt::Function { name, params, body } => {
                 // self.environment is the current active environment when function

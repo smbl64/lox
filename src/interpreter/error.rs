@@ -32,13 +32,16 @@ impl Display for RuntimeError {
 
 #[derive(Debug)]
 pub struct ResolverError {
-    pub token: Token,
+    pub token: Option<Token>,
     pub msg: String,
 }
 
 impl Display for ResolverError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "[line {}] {}", self.token.line, self.msg)
+        match &self.token {
+            Some(token) => write!(f, "[line {}] {}", token.line, self.msg),
+            None => write!(f, "[line {}] {}", "?", self.msg),
+        }
     }
 }
 

@@ -11,6 +11,7 @@ use super::{error::ResolverError, Interpreter};
 enum FunctionType {
     None,
     Function,
+    Method,
 }
 
 /// Resolver uses static analysis to bind local variables to the correct envorinment.
@@ -53,32 +54,23 @@ impl<'a> Visitor<Stmt> for Resolver<'a> {
                 self.define(name);
                 Ok(())
             }
-            Stmt::Class { name, methods: _ } => {
-                self.declare(name)?;
-                self.define(name);
+            Stmt::Class { name: _, methods } => {
+                for method in methods {
+                    self.resolve_function(method, FunctionType::Method)?;
+                }
                 Ok(())
             }
-            Stmt::Function { name, params, body } => {
+            Stmt::Function {
+                name,
+                params: _,
+                body: _,
+            } => {
                 // Unlike variables, we declare and define functions before processing
                 // their body. This way, functions can recursively call themselves.
                 self.declare(name)?;
                 self.define(name);
 
-                let enclosing_func = self.current_function;
-                self.current_function = FunctionType::Function;
-
-                // Resolve function's body
-                self.begin_scope();
-                for param in params {
-                    self.declare(param)?;
-                    self.define(param);
-                }
-
-                self.resolve(body)?;
-                self.end_scope();
-                self.current_function = enclosing_func;
-
-                Ok(())
+                self.resolve_function(input, FunctionType::Function)
             }
             Stmt::Expression { expr } => self.resolve_expr(expr),
             Stmt::If {
@@ -102,7 +94,7 @@ impl<'a> Visitor<Stmt> for Resolver<'a> {
             Stmt::Return { keyword, value } => {
                 if self.current_function == FunctionType::None {
                     return Err(ResolverError {
-                        token: keyword.clone(),
+                        token: Some(keyword.clone()),
                         msg: "Can't return from top-level code".to_owned(),
                     });
                 }
@@ -140,7 +132,7 @@ impl<'a> Resolver<'a> {
 
         if last.contains_key(&name.lexeme) {
             return Err(ResolverError {
-                token: name.clone(),
+                token: Some(name.clone()),
                 msg: "Already a variable with this name in this scope.".to_owned(),
             });
         }
@@ -178,6 +170,38 @@ impl<'a> Resolver<'a> {
     fn resolve_expr(&mut self, expr: &Expr) -> Result<(), ResolverError> {
         self.visit(expr)
     }
+
+    fn resolve_function(
+        &mut self,
+        stmt: &Stmt,
+        func_type: FunctionType,
+    ) -> Result<(), ResolverError> {
+        if let Stmt::Function {
+            name: _,
+            params,
+            body,
+        } = stmt
+        {
+            let enclosing_func = self.current_function;
+            self.current_function = func_type;
+
+            self.begin_scope();
+            for param in params {
+                self.declare(param)?;
+                self.define(param);
+            }
+
+            self.resolve(body)?;
+            self.end_scope();
+            self.current_function = enclosing_func;
+            Ok(())
+        } else {
+            Err(ResolverError {
+                token: None,
+                msg: "Expected a function".to_owned(),
+            })
+        }
+    }
 }
 
 impl<'a> Visitor<Expr> for Resolver<'a> {
@@ -193,7 +217,7 @@ impl<'a> Visitor<Expr> for Resolver<'a> {
 
                     if let Some(false) = scope.get(&name.lexeme) {
                         return Err(ResolverError {
-                            token: name.clone(),
+                            token: Some(name.clone()),
                             msg: "Can't read local variable in its own initialization".to_owned(),
                         });
                     }

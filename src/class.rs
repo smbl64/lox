@@ -4,18 +4,20 @@ use std::fmt::Display;
 use std::rc::Rc;
 
 use crate::object::Object;
-use crate::prelude::RuntimeError;
+use crate::prelude::{LoxFunction, RuntimeError};
 use crate::token::Token;
 
 #[derive(Debug, Clone)]
 pub struct Class {
     name: String,
+    methods: HashMap<String, Rc<LoxFunction>>,
 }
 
 impl Class {
-    pub fn new(name: impl AsRef<str>) -> Self {
+    pub fn new(name: impl AsRef<str>, methods: HashMap<String, Rc<LoxFunction>>) -> Self {
         Self {
             name: name.as_ref().to_owned(),
+            methods,
         }
     }
 }
@@ -29,6 +31,10 @@ impl Display for Class {
 impl Class {
     pub fn construct(class: Rc<RefCell<Class>>) -> Instance {
         Instance::new(class)
+    }
+
+    pub fn find_method(&self, name: &str) -> Option<Rc<LoxFunction>> {
+        self.methods.get(name).map(|f| f.clone())
     }
 }
 
@@ -49,6 +55,8 @@ impl Instance {
     pub fn get(&self, field: &Token) -> Result<Object, RuntimeError> {
         if let Some(object) = self.fields.get(&field.lexeme) {
             Ok(object.clone())
+        } else if let Some(function) = self.class.borrow().find_method(&field.lexeme) {
+            Ok(Object::Callable(function))
         } else {
             Err(RuntimeError::UndefinedVariable {
                 name: field.clone(),
