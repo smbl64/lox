@@ -1,13 +1,17 @@
 #![allow(clippy::new_without_default)]
 mod ast;
+mod class;
 mod interpreter;
+mod object;
 mod parser;
 mod scanner;
 mod token;
 
 pub mod prelude {
     pub use crate::ast::*;
+    pub use crate::class::*;
     pub use crate::interpreter::*;
+    pub use crate::object::*;
     pub use crate::parser::*;
     pub use crate::scanner::*;
     pub use crate::token::*;

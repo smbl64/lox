@@ -36,6 +36,8 @@ impl Parser {
     fn declaration(&mut self) -> Option<Stmt> {
         let result = if self.match_tt(&[TokenType::Var]) {
             self.var_declaration()
+        } else if self.match_tt(&[TokenType::Class]) {
+            self.class()
         } else if self.match_tt(&[TokenType::Fun]) {
             self.function("function")
         } else {
@@ -65,6 +67,19 @@ impl Parser {
         )?;
 
         Some(Stmt::Var { name, initializer })
+    }
+
+    fn class(&mut self) -> Option<Stmt> {
+        let name = self.consume(TokenType::Identifier, "Expect class name")?;
+        self.consume(TokenType::LeftBrace, "Expect '{' before class body")?;
+        let mut methods = vec![];
+        while !self.check(&TokenType::RightBrace) && !self.is_at_end() {
+            methods.push(self.function("method")?);
+        }
+
+        self.consume(TokenType::RightBrace, "Expect '}' after class body")?;
+
+        Some(Stmt::Class { name, methods })
     }
 
     fn function(&mut self, kind: &str) -> Option<Stmt> {

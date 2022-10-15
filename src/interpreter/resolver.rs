@@ -53,6 +53,11 @@ impl<'a> Visitor<Stmt> for Resolver<'a> {
                 self.define(name);
                 Ok(())
             }
+            Stmt::Class { name, methods: _ } => {
+                self.declare(name)?;
+                self.define(name);
+                Ok(())
+            }
             Stmt::Function { name, params, body } => {
                 // Unlike variables, we declare and define functions before processing
                 // their body. This way, functions can recursively call themselves.

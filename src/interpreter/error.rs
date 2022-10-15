@@ -1,4 +1,5 @@
-use crate::token::{Object, Token};
+use crate::object::Object;
+use crate::token::Token;
 use std::error::Error;
 use std::fmt::Display;
 

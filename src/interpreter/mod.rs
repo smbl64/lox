@@ -8,7 +8,7 @@ use std::rc::Rc;
 use std::{cell::RefCell, collections::HashMap};
 
 use crate::{prelude::*, SharedErrorReporter};
-use environment::Environment;
+pub use environment::Environment;
 pub use error::RuntimeError;
 use func::LoxFunction;
 pub use resolver::Resolver;
@@ -25,7 +25,6 @@ pub struct Interpreter {
 impl Interpreter {
     pub fn new() -> Self {
         let globals = Rc::new(RefCell::new(Environment::new()));
-        //let environment = Rc::new(RefCell::new(Environment::with_enclosing(globals.clone())));
         let environment = globals.clone();
 
         globals
@@ -108,30 +107,41 @@ impl Visitor<Expr> for Interpreter {
                 arguments,
             } => {
                 let callee = self.evaluate(&callee)?;
-                if let Object::Callable(callable) = callee {
-                    if callable.arity() != arguments.len() {
-                        return Err(RuntimeError::InvalidOperand {
-                            operator: paren.clone(),
-                            msg: format!(
-                                "Expected {} argumnets, got {}",
-                                callable.arity(),
-                                arguments.len()
-                            ),
-                        });
-                    }
+                match callee {
+                    Object::Callable(callable) => {
+                        if callable.arity() != arguments.len() {
+                            return Err(RuntimeError::InvalidOperand {
+                                operator: paren.clone(),
+                                msg: format!(
+                                    "Expected {} arguments, got {}",
+                                    callable.arity(),
+                                    arguments.len()
+                                ),
+                            });
+                        }
+                        // Evaluate all arguments
+                        let mut args = vec![];
+                        for arg in arguments {
+                            args.push(self.evaluate(arg)?);
+                        }
 
-                    // Evaluate all arguments
-                    let mut args = vec![];
-                    for arg in arguments {
-                        args.push(self.evaluate(arg)?);
+                        callable.call(self, args)
                     }
+                    Object::Class(class) => {
+                        if 0 != arguments.len() {
+                            return Err(RuntimeError::InvalidOperand {
+                                operator: paren.clone(),
+                                msg: format!("Expected {} arguments, got {}", 0, arguments.len()),
+                            });
+                        }
 
-                    callable.call(self, args)
-                } else {
-                    return Err(RuntimeError::InvalidOperand {
+                        let instance = Class::construct(class.clone());
+                        Ok(Object::Instance(instance))
+                    }
+                    _ => Err(RuntimeError::InvalidOperand {
                         operator: paren.clone(),
                         msg: "Can only call functions and classes".to_owned(),
-                    });
+                    }),
                 }
             }
         }
@@ -146,6 +156,16 @@ impl Visitor<Stmt> for Interpreter {
         match stmt {
             Stmt::Expression { expr } => {
                 self.evaluate(expr)?;
+            }
+            Stmt::Class { name, methods: _ } => {
+                self.environment
+                    .borrow_mut()
+                    .define(&name.lexeme, Object::Null);
+
+                let class = Rc::new(RefCell::new(Class::new(&name.lexeme)));
+                self.environment
+                    .borrow_mut()
+                    .assign(name, Object::Class(class))?;
             }
             Stmt::Function { name, params, body } => {
                 // self.environment is the current active environment when function

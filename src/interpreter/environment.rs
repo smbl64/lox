@@ -1,7 +1,8 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use super::RuntimeError;
-use crate::token::{Object, Token};
+use crate::object::Object;
+use crate::token::Token;
 
 #[derive(Debug)]
 pub struct Environment {

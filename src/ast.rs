@@ -1,6 +1,6 @@
 use std::{hash::Hash, rc::Rc};
 
-use crate::token::{Object, Token};
+use crate::prelude::*;
 
 pub trait Visitor<I> {
     type Result;
@@ -78,6 +78,10 @@ pub enum Stmt {
     Return {
         keyword: Token,
         value: Option<Expr>,
+    },
+    Class {
+        name: Token,
+        methods: Vec<Stmt>,
     },
     Print {
         exprs: Vec<Expr>,

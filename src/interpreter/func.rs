@@ -1,11 +1,6 @@
 use std::{cell::RefCell, fmt::Display, rc::Rc};
 
-use crate::{
-    ast::Stmt,
-    token::{Callable, Object, Token},
-};
-
-use super::{environment::Environment, Interpreter, RuntimeError};
+use crate::prelude::*;
 
 #[derive(Debug)]
 pub struct LoxFunction {
