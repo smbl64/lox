@@ -16,12 +16,15 @@ pub enum Object {
 
 impl PartialEq for Object {
     fn eq(&self, other: &Self) -> bool {
+        //dbg!(other);
         match (self, other) {
             (Self::Null, Self::Null) => true,
             (Self::Boolean(left), Self::Boolean(right)) => left == right,
             (Self::Number(left), Self::Number(right)) => left == right,
             (Self::String(left), Self::String(right)) => left == right,
-            (Self::Callable(_), Self::Callable(_)) => false,
+            (Self::Callable(left), Self::Callable(right)) => {
+                std::ptr::eq(left.as_ref(), right.as_ref())
+            }
             _ => false,
         }
     }
