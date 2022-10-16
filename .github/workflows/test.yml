@@ -3,8 +3,18 @@ name: Tests
 on:
   push:
     branches: [ "master" ]
+    paths:
+      - '.github/workflows/*'
+      - 'src/**'
+      - 'Cargo.*'
+      - build.rs
   pull_request:
     branches: [ "master" ]
+    paths:
+      - '.github/workflows/*'
+      - 'src/**'
+      - 'Cargo.*'
+      - build.rs
 
 env:
   CARGO_TERM_COLOR: always
