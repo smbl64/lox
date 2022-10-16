@@ -19,6 +19,7 @@ enum FunctionType {
 enum ClassType {
     None,
     Class,
+    SubClass,
 }
 
 /// Resolver uses static analysis to bind local variables to the correct envorinment.
@@ -87,6 +88,7 @@ impl<'a> Visitor<Stmt> for Resolver<'a> {
                         panic!("Superclass is not enclosed in a Expr::Variable!");
                     }
 
+                    self.current_class = ClassType::SubClass;
                     self.resolve_expr(superclass)?;
                 }
 
@@ -331,7 +333,21 @@ impl<'a> Visitor<Expr> for Resolver<'a> {
                 self.resolve_expr(&value)?;
                 self.resolve_local(input, name)
             }
-            Expr::Super { keyword, method: _ } => self.resolve_local(input, keyword),
+            Expr::Super { keyword, method: _ } => {
+                if self.current_class == ClassType::None {
+                    ResolverError::new(
+                        Some(keyword.clone()),
+                        "Can't use 'super' outside of a class",
+                    )
+                } else if self.current_class != ClassType::SubClass {
+                    ResolverError::new(
+                        Some(keyword.clone()),
+                        "Can't use 'super' in a class without superclass",
+                    )
+                } else {
+                    self.resolve_local(input, keyword)
+                }
+            }
             Expr::Binary {
                 left,
                 operator: _,
