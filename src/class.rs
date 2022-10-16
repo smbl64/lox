@@ -12,13 +12,19 @@ use crate::token::{Callable, Token};
 pub struct Class {
     name: String,
     methods: HashMap<String, Rc<LoxFunction>>,
+    superclass: Option<Rc<RefCell<Self>>>,
 }
 
 impl Class {
-    pub fn new(name: impl AsRef<str>, methods: HashMap<String, Rc<LoxFunction>>) -> Self {
+    pub fn new(
+        name: impl AsRef<str>,
+        methods: HashMap<String, Rc<LoxFunction>>,
+        superclass: Option<Rc<RefCell<Self>>>,
+    ) -> Self {
         Self {
             name: name.as_ref().to_owned(),
             methods,
+            superclass,
         }
     }
 }

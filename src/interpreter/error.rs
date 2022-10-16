@@ -7,6 +7,7 @@ use std::fmt::Display;
 pub enum RuntimeError {
     InvalidOperand { operator: Token, msg: String },
     UndefinedVariable { name: Token, msg: String },
+    Generic { name: Token, msg: String },
     Break { token: Token },
     Return { token: Token, value: Object },
 }
@@ -18,6 +19,9 @@ impl Display for RuntimeError {
                 write!(f, "[line {}] {}", operator.line, msg)
             }
             RuntimeError::UndefinedVariable { name, msg } => {
+                write!(f, "[line {}] {}", name.line, msg)
+            }
+            RuntimeError::Generic { name, msg } => {
                 write!(f, "[line {}] {}", name.line, msg)
             }
             RuntimeError::Break { token } => {

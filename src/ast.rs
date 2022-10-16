@@ -94,6 +94,7 @@ pub enum Stmt {
     Class {
         name: Token,
         methods: Vec<Stmt>,
+        superclass: Option<Expr>,
     },
     Print {
         exprs: Vec<Expr>,

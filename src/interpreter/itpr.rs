@@ -183,7 +183,31 @@ impl Visitor<Stmt> for Interpreter {
             Stmt::Expression { expr } => {
                 self.evaluate(expr)?;
             }
-            Stmt::Class { name, methods } => {
+            Stmt::Class {
+                name,
+                methods,
+                superclass,
+            } => {
+                // TODO: this looks really ugly!!
+                let superclass = if let Some(s) = superclass {
+                    let obj = self.evaluate(s)?;
+                    match obj {
+                        Object::Class(c) => Some(c),
+                        _ => {
+                            if let Expr::Variable { name: super_name } = s {
+                                return Err(RuntimeError::Generic {
+                                    name: super_name.clone(),
+                                    msg: "Superclass must be a class".to_owned(),
+                                });
+                            } else {
+                                panic!("Superclass is not enclosed in a Expr::Variable!");
+                            }
+                        }
+                    }
+                } else {
+                    None
+                };
+
                 let mut env_mut = self.environment.borrow_mut();
                 env_mut.define(&name.lexeme, Object::Null);
 
@@ -207,7 +231,11 @@ impl Visitor<Stmt> for Interpreter {
                     }
                 }
 
-                let class = Rc::new(RefCell::new(Class::new(&name.lexeme, method_funcs)));
+                let class = Rc::new(RefCell::new(Class::new(
+                    &name.lexeme,
+                    method_funcs,
+                    superclass,
+                )));
                 env_mut.assign(name, Object::Class(class))?;
             }
             Stmt::Function { name, params, body } => {

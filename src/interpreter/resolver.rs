@@ -63,9 +63,32 @@ impl<'a> Visitor<Stmt> for Resolver<'a> {
                 self.define(name);
                 Ok(())
             }
-            Stmt::Class { name: _, methods } => {
+            Stmt::Class {
+                name,
+                methods,
+                superclass,
+            } => {
                 let enclosing_class = self.current_class;
                 self.current_class = ClassType::Class;
+
+                self.declare(name)?;
+                self.define(name);
+
+                if let Some(superclass) = superclass {
+                    // Make sure super class has a different name!
+                    if let Expr::Variable { name: super_name } = superclass {
+                        if super_name.lexeme == name.lexeme {
+                            return ResolverError::new(
+                                Some(super_name.clone()),
+                                "A class can't inherit from itself",
+                            );
+                        }
+                    } else {
+                        panic!("Superclass is not enclosed in a Expr::Variable!");
+                    }
+
+                    self.resolve_expr(superclass)?;
+                }
 
                 self.begin_scope();
                 // Safe to unwrap, because we're calling begin_scope before it
