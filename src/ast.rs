@@ -29,6 +29,10 @@ pub enum Expr {
         name: Token,
         value: Box<Expr>,
     },
+    Super {
+        keyword: Token,
+        method: Token,
+    },
     This {
         keyword: Token,
     },
@@ -183,6 +187,7 @@ impl Visitor<Expr> for AstPrinter {
                 name,
                 self.visit(value)?
             ),
+            Expr::Super { keyword, method } => format!("{}.{}", keyword, method),
         };
         Ok(s)
     }

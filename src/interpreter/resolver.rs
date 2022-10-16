@@ -90,6 +90,14 @@ impl<'a> Visitor<Stmt> for Resolver<'a> {
                     self.resolve_expr(superclass)?;
                 }
 
+                if superclass.is_some() {
+                    self.begin_scope();
+                    // Safe to unwrap, because we're calling begin_scope before it
+                    self.peek_mut_scope()
+                        .unwrap()
+                        .insert("super".to_owned(), true);
+                }
+
                 self.begin_scope();
                 // Safe to unwrap, because we're calling begin_scope before it
                 self.peek_mut_scope()
@@ -120,6 +128,11 @@ impl<'a> Visitor<Stmt> for Resolver<'a> {
                 }
 
                 self.end_scope();
+
+                if superclass.is_some() {
+                    self.end_scope();
+                }
+
                 self.current_class = enclosing_class;
                 Ok(())
             }
@@ -318,6 +331,7 @@ impl<'a> Visitor<Expr> for Resolver<'a> {
                 self.resolve_expr(&value)?;
                 self.resolve_local(input, name)
             }
+            Expr::Super { keyword, method: _ } => self.resolve_local(input, keyword),
             Expr::Binary {
                 left,
                 operator: _,

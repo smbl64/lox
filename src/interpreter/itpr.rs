@@ -96,6 +96,35 @@ impl Visitor<Expr> for Interpreter {
                     })
                 }
             }
+            Expr::Super {
+                keyword,
+                method: method_name,
+            } => {
+                let distance = *self
+                    .locals
+                    .get(&expr.unique_id())
+                    .expect("Cannot find distance");
+
+                let superclass = self.environment.borrow().get_at(distance, keyword)?;
+                let superclass = match superclass {
+                    Object::Class(c) => c,
+                    _ => panic!("Superclass is not wrapped in Object::Class"),
+                };
+
+                let this = Token::new(TokenType::Identifier, "this", None, -1);
+                let instance = self.environment.borrow().get_at(distance - 1, &this)?;
+
+                let method = superclass.borrow().find_method(&method_name.lexeme);
+
+                if let Some(method) = method {
+                    Ok(Object::Callable(method.bind(instance)))
+                } else {
+                    Err(RuntimeError::UndefinedVariable {
+                        name: method_name.clone(),
+                        msg: format!("Undefined property '{}'", method_name.lexeme),
+                    })
+                }
+            }
             Expr::This { keyword } => self.lookup_variable(keyword, expr),
             Expr::Logical {
                 left,
@@ -208,9 +237,21 @@ impl Visitor<Stmt> for Interpreter {
                     None
                 };
 
-                let mut env_mut = self.environment.borrow_mut();
-                env_mut.define(&name.lexeme, Object::Null);
+                self.environment
+                    .borrow_mut()
+                    .define(&name.lexeme, Object::Null);
 
+                if let Some(ref superclass) = superclass {
+                    self.environment = Rc::new(RefCell::new(Environment::with_enclosing(
+                        self.environment.clone(),
+                    )));
+
+                    self.environment
+                        .borrow_mut()
+                        .define("super", Object::Class(superclass.clone()));
+                }
+
+                // Create method functions
                 let mut method_funcs = HashMap::new();
                 for method in methods {
                     if let Stmt::Function { name, params, body } = method {
@@ -227,16 +268,24 @@ impl Visitor<Stmt> for Interpreter {
                             )),
                         );
                     } else {
-                        todo!()
+                        panic!("Method is not encapsulated in Stmt::Function");
                     }
                 }
 
                 let class = Rc::new(RefCell::new(Class::new(
                     &name.lexeme,
                     method_funcs,
-                    superclass,
+                    superclass.clone(),
                 )));
-                env_mut.assign(name, Object::Class(class))?;
+
+                if superclass.is_some() {
+                    let enclosing = self.environment.borrow().enclosing.clone().unwrap();
+                    self.environment = enclosing;
+                }
+
+                self.environment
+                    .borrow_mut()
+                    .assign(name, Object::Class(class))?;
             }
             Stmt::Function { name, params, body } => {
                 // self.environment is the current active environment when function

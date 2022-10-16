@@ -473,6 +473,14 @@ impl Parser {
                 value: Object::Boolean(true),
             });
         }
+
+        if self.match_tt(&[TokenType::Super]) {
+            let keyword = self.previous();
+            self.consume(TokenType::Dot, "Expect '.' after super")?;
+            let method = self.consume(TokenType::Identifier, "Expect superclass method name")?;
+            return Some(Expr::Super { keyword, method });
+        }
+
         if self.match_tt(&[TokenType::Nil]) {
             return Some(Expr::Literal {
                 value: Object::Null,

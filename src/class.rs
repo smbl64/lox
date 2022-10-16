@@ -53,7 +53,15 @@ impl Class {
     }
 
     pub fn find_method(&self, name: &str) -> Option<Rc<LoxFunction>> {
-        self.methods.get(name).map(|f| f.clone())
+        if self.methods.contains_key(name) {
+            return self.methods.get(name).map(|f| f.clone());
+        }
+
+        if let Some(superclass) = &self.superclass {
+            return superclass.borrow().find_method(name);
+        }
+
+        None
     }
 
     pub fn arity(&self) -> usize {
