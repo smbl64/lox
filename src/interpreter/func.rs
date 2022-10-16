@@ -8,6 +8,7 @@ pub struct LoxFunction {
     params: Vec<Token>,
     body: Vec<Rc<Stmt>>,
     closure: Rc<RefCell<Environment>>,
+    is_initializer: bool,
 }
 
 impl LoxFunction {
@@ -16,12 +17,14 @@ impl LoxFunction {
         params: Vec<Token>,
         body: &[Rc<Stmt>],
         closure: Rc<RefCell<Environment>>,
+        is_initializer: bool,
     ) -> Self {
         Self {
             name,
             params,
             body: body.to_vec(),
             closure,
+            is_initializer,
         }
     }
 
@@ -35,6 +38,7 @@ impl LoxFunction {
             self.params.clone(),
             &self.body,
             env,
+            self.is_initializer,
         ))
     }
 }
@@ -56,6 +60,15 @@ impl Callable for LoxFunction {
 
         let environment = Rc::new(RefCell::new(environment));
         let res = interpret.execute_block(&self.body, environment);
+
+        // If this is an initializer and we didn't get an error, return "this" as the return value
+        if self.is_initializer
+            && (matches!(res, Ok(_))
+                || matches!(res, Err(RuntimeError::Return { token: _, value: _ })))
+        {
+            let token = Token::new(TokenType::This, "this", None, -1);
+            return self.closure.borrow().get_at(0, &token);
+        }
 
         // If a 'Return' runtime exception is generated, this means the block had a
         // return statement. We should extract the value from it and return it.

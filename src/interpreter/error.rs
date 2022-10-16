@@ -36,6 +36,15 @@ pub struct ResolverError {
     pub msg: String,
 }
 
+impl ResolverError {
+    pub fn new<T>(token: Option<Token>, msg: impl AsRef<str>) -> Result<T, Self> {
+        Err(Self {
+            token,
+            msg: msg.as_ref().to_owned(),
+        })
+    }
+}
+
 impl Display for ResolverError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.token {

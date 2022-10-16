@@ -11,6 +11,7 @@ use super::{error::ResolverError, Interpreter};
 enum FunctionType {
     None,
     Function,
+    Initializer,
     Method,
 }
 
@@ -73,7 +74,26 @@ impl<'a> Visitor<Stmt> for Resolver<'a> {
                     .insert("this".to_owned(), true);
 
                 for method in methods {
-                    self.resolve_function(method, FunctionType::Method)?;
+                    let is_initializer = match method {
+                        Stmt::Function {
+                            name,
+                            params: _,
+                            body: _,
+                        } => name.lexeme == "init",
+                        _ => {
+                            // This should not happen if the parser
+                            // does its job properly!
+                            return ResolverError::new(None, "Method must be a function statement");
+                        }
+                    };
+
+                    let func_type = if is_initializer {
+                        FunctionType::Initializer
+                    } else {
+                        FunctionType::Method
+                    };
+
+                    self.resolve_function(method, func_type)?;
                 }
 
                 self.end_scope();
@@ -113,13 +133,20 @@ impl<'a> Visitor<Stmt> for Resolver<'a> {
             }
             Stmt::Return { keyword, value } => {
                 if self.current_function == FunctionType::None {
-                    return Err(ResolverError {
-                        token: Some(keyword.clone()),
-                        msg: "Can't return from top-level code".to_owned(),
-                    });
+                    return ResolverError::new(
+                        Some(keyword.clone()),
+                        "Can't return from top-level code",
+                    );
                 }
 
                 if let Some(expr) = value {
+                    // Cannot return anything from "init" function
+                    if self.current_function == FunctionType::Initializer {
+                        return ResolverError::new(
+                            Some(keyword.clone()),
+                            "Can't return a value from an initializer",
+                        );
+                    }
                     self.resolve_expr(expr)?;
                 }
                 Ok(())
@@ -151,10 +178,10 @@ impl<'a> Resolver<'a> {
         let last = self.scopes.get_mut(last_idx).unwrap();
 
         if last.contains_key(&name.lexeme) {
-            return Err(ResolverError {
-                token: Some(name.clone()),
-                msg: "Already a variable with this name in this scope.".to_owned(),
-            });
+            return ResolverError::new(
+                Some(name.clone()),
+                "Already a variable with this name in this scope.",
+            );
         }
 
         last.insert(name.lexeme.clone(), false);
@@ -203,10 +230,10 @@ impl<'a> Resolver<'a> {
 
     fn resolve_this(&mut self, expr: &Expr, keyword: &Token) -> Result<(), ResolverError> {
         if self.current_class == ClassType::None {
-            return Err(ResolverError {
-                token: Some(keyword.clone()),
-                msg: "Can't use 'this' outside of a class".to_owned(),
-            });
+            return ResolverError::new(
+                Some(keyword.clone()),
+                "Can't use 'this' outside of a class",
+            );
         }
 
         self.resolve_local(expr, keyword)
@@ -237,10 +264,7 @@ impl<'a> Resolver<'a> {
             self.current_function = enclosing_func;
             Ok(())
         } else {
-            Err(ResolverError {
-                token: None,
-                msg: "Expected a function".to_owned(),
-            })
+            ResolverError::new(None, "Expected a function")
         }
     }
 }
@@ -257,10 +281,10 @@ impl<'a> Visitor<Expr> for Resolver<'a> {
                     let scope = self.scopes.get(last_idx).unwrap();
 
                     if let Some(false) = scope.get(&name.lexeme) {
-                        return Err(ResolverError {
-                            token: Some(name.clone()),
-                            msg: "Can't read local variable in its own initialization".to_owned(),
-                        });
+                        return ResolverError::new(
+                            Some(name.clone()),
+                            "Can't read local variable in its own initialization",
+                        );
                     }
                 }
 

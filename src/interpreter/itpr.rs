@@ -190,6 +190,8 @@ impl Visitor<Stmt> for Interpreter {
                 let mut method_funcs = HashMap::new();
                 for method in methods {
                     if let Stmt::Function { name, params, body } = method {
+                        let is_initializer = if name.lexeme == "init" { true } else { false };
+
                         method_funcs.insert(
                             name.lexeme.clone(),
                             Rc::new(LoxFunction::new(
@@ -197,6 +199,7 @@ impl Visitor<Stmt> for Interpreter {
                                 params.to_vec(),
                                 body,
                                 self.environment.clone(),
+                                is_initializer,
                             )),
                         );
                     } else {
@@ -213,7 +216,7 @@ impl Visitor<Stmt> for Interpreter {
                 // In other words, this is the enclosing environment in which the function is
                 // declarad. For inner functions, it refers to their parent function's environment.
                 let env = self.environment.clone();
-                let function = LoxFunction::new(name.clone(), params.to_vec(), body, env);
+                let function = LoxFunction::new(name.clone(), params.to_vec(), body, env, false);
                 self.environment
                     .borrow_mut()
                     .define(&name.lexeme, Object::Callable(Rc::new(function)));
