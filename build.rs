@@ -26,7 +26,7 @@ fn main() {
 
     for entry in get_all_files() {
         let filename = entry.path().to_str().unwrap();
-        if is_blacklisted(filename) {
+        if should_skip(filename) {
             continue;
         }
 
@@ -52,16 +52,10 @@ fn get_all_files() -> Vec<walkdir::DirEntry> {
         .collect()
 }
 
-fn is_blacklisted(filename: &str) -> bool {
-    let blacklist = vec![
-        "394.lox",
-        "benchmark/",
-        "class", // Without slash
-        "inheritance/",
-        "super/",
-    ];
+fn should_skip(filename: &str) -> bool {
+    let skip_list = vec!["benchmark/"];
 
-    for s in blacklist {
+    for s in skip_list {
         if filename.contains(s) {
             return true;
         }

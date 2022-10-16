@@ -25,6 +25,10 @@ impl PartialEq for Object {
             (Self::Callable(left), Self::Callable(right)) => {
                 std::ptr::eq(left.as_ref(), right.as_ref())
             }
+            (Self::Class(left), Self::Class(right)) => std::ptr::eq(left.as_ref(), right.as_ref()),
+            (Self::Instance(left), Self::Instance(right)) => {
+                std::ptr::eq(left.as_ref(), right.as_ref())
+            }
             _ => false,
         }
     }
