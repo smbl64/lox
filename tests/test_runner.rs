@@ -1,68 +1,33 @@
 use std::{path::Path, process::Output};
 
 use assert_cmd::Command;
-use walkdir::WalkDir;
+
+
+include!(concat!(env!("OUT_DIR"), "/test_files.rs"));
+
+// These functions are used by the included tests above
+// See `build.rs` for the code that generates the tests.
 
 // TODO: expect runtime error:
+fn do_test(filename: &Path) {
+    let expect = find_expects(filename);
+    let expected = expect.join("\n");
 
-#[test]
-fn run_all_files() {
-    let dir = "./tests/data/";
+    let output = run_file(filename);
+    //assert!(output.status.success());
 
-    let entries = WalkDir::new(dir)
-        .into_iter()
-        .filter_map(|o| o.ok())
-        .filter(|e| e.file_type().is_file());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    let stdout = stdout.trim_end();
 
-    for entry in entries {
-        let filename = entry.path();
-        if is_blacklisted(filename.to_str().unwrap()) {
-            continue;
-        }
+    let stderr = String::from_utf8(output.stderr).unwrap();
+    let stderr = stderr.trim_end();
 
-        print!("{} ... ", filename.display());
-
-        let expect = find_expects(filename);
-        let expected = expect.join("\n");
-
-        let output = run_file(filename);
-        //assert!(output.status.success());
-
-        let stdout = String::from_utf8(output.stdout).unwrap();
-        let stdout = stdout.trim_end();
-
-        let stderr = String::from_utf8(output.stderr).unwrap();
-        let stderr = stderr.trim_end();
-
-        assert_eq!(expected, stdout, "stdout={}, stderr={}", stdout, stderr);
-
-        println!("OK");
-    }
+    assert_eq!(expected, stdout, "stdout={}, stderr={}", stdout, stderr);
 }
 
 fn run_file(filename: &Path) -> Output {
     let mut cmd = Command::cargo_bin("lox").unwrap();
     cmd.arg(filename).output().unwrap()
-}
-
-fn is_blacklisted(filename: &str) -> bool {
-    let blacklist = vec![
-        "394.lox",
-        "benchmark/",
-        "class", // Without slash
-        "constructor/",
-        "inheritance/",
-        "method", // Without slash
-        "super/",
-    ];
-
-    for s in blacklist {
-        if filename.contains(s) {
-            return true;
-        }
-    }
-
-    false
 }
 
 fn find_expects(filename: &Path) -> Vec<String> {
@@ -84,31 +49,3 @@ fn find_expects(filename: &Path) -> Vec<String> {
 
     result
 }
-
-//#[test]
-//fn woot() {
-//    let source = r#"
-//        {
-//            var b = b;
-//        }
-//    "#;
-
-//    //let mut scanner = Scanner::new(source);
-//    //let tokens = scanner.scan_tokens();
-
-//    //let mut parser = Parser::new(tokens);
-//    //let statements = parser.parse();
-//    //assert!(statements.is_some());
-
-//    //let statements = statements.unwrap();
-//    //let mut interpreter = Interpreter::new();
-//    //let mut resolver = Resolver::new(&mut interpreter);
-//    //let res = resolver.resolve(&statements);
-//    //assert!(res.is_ok());
-
-//    //interpreter.interpret(&statements)
-
-//    let mut lox = Lox::new();
-//    let result = lox.run(source);
-//    assert!(result.is_err());
-//}

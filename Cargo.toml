@@ -17,3 +17,6 @@ anyhow = "1.0.62"
 [dev-dependencies]
 assert_cmd = "2"
 walkdir = "2"
+
+[build-dependencies]
+walkdir = "2"
