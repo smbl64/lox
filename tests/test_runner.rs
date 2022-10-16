@@ -2,7 +2,6 @@ use std::{path::Path, process::Output};
 
 use assert_cmd::Command;
 
-
 include!(concat!(env!("OUT_DIR"), "/test_files.rs"));
 
 // These functions are used by the included tests above
@@ -22,7 +21,11 @@ fn do_test(filename: &Path) {
     let stderr = String::from_utf8(output.stderr).unwrap();
     let stderr = stderr.trim_end();
 
-    assert_eq!(expected, stdout, "stdout={}, stderr={}", stdout, stderr);
+    assert_eq!(
+        expected, stdout,
+        "Expected != stdout\n  stdout={}\n  stderr={}\n",
+        stdout, stderr
+    );
 }
 
 fn run_file(filename: &Path) -> Output {

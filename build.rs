@@ -57,9 +57,7 @@ fn is_blacklisted(filename: &str) -> bool {
         "394.lox",
         "benchmark/",
         "class", // Without slash
-        "constructor/",
         "inheritance/",
-        "method", // Without slash
         "super/",
     ];
 
