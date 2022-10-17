@@ -101,7 +101,7 @@ impl Environment {
 
     fn ancestor(&self, distance: usize) -> Option<Rc<RefCell<Environment>>> {
         let parent = self.enclosing.clone()?;
-        let mut env = parent.clone();
+        let mut env = parent;
 
         for _ in 1..distance {
             let parent = env.borrow().enclosing.clone()?;

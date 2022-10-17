@@ -49,12 +49,12 @@ impl Class {
                 .call(interpreter, arguments)?;
         }
 
-        Ok(instance.clone())
+        Ok(instance)
     }
 
     pub fn find_method(&self, name: &str) -> Option<Rc<LoxFunction>> {
         if self.methods.contains_key(name) {
-            return self.methods.get(name).map(|f| f.clone());
+            return self.methods.get(name).cloned();
         }
 
         if let Some(superclass) = &self.superclass {

@@ -134,16 +134,12 @@ impl Scanner {
     }
 
     // TODO: Any way to perform better here?
-    fn soure_substring(&self, start: usize, end: usize) -> String {
-        self.source_chars
-            .get(start..end)
-            .unwrap()
-            .into_iter()
-            .collect()
+    fn source_substring(&self, start: usize, end: usize) -> String {
+        self.source_chars.get(start..end).unwrap().iter().collect()
     }
 
     fn add_token_with_literal(&mut self, token_type: TokenType, literal_value: Option<Object>) {
-        let text = self.soure_substring(self.start, self.current);
+        let text = self.source_substring(self.start, self.current);
         let token = Token::new(token_type, &text, literal_value, self.line);
         self.tokens.push(token)
     }
@@ -196,7 +192,7 @@ impl Scanner {
         self.advance();
 
         // Skip the quote marks
-        let text = self.soure_substring(self.start + 1, self.current - 1);
+        let text = self.source_substring(self.start + 1, self.current - 1);
         self.add_token_with_literal(TokenType::StringLiteral, Some(Object::String(text)));
     }
 
@@ -214,7 +210,7 @@ impl Scanner {
             }
         }
 
-        let text = self.soure_substring(self.start, self.current);
+        let text = self.source_substring(self.start, self.current);
         let value = text
             .parse::<f64>()
             .unwrap_or_else(|_| panic!("failed to parse number: {}", text));
@@ -227,7 +223,7 @@ impl Scanner {
             self.advance();
         }
 
-        let text = self.soure_substring(self.start, self.current);
+        let text = self.source_substring(self.start, self.current);
         let token_type = get_keyword(&text).unwrap_or(TokenType::Identifier);
         self.add_token(token_type);
     }

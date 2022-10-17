@@ -60,7 +60,7 @@ impl Visitor<Expr> for Interpreter {
                 if let Some(&distance) = self.locals.get(&expr.unique_id()) {
                     self.environment
                         .borrow_mut()
-                        .assign_at(distance, &name, value.clone())?;
+                        .assign_at(distance, name, value.clone())?;
                 } else {
                     self.globals.borrow_mut().assign(name, value.clone())?;
                 }
@@ -68,7 +68,7 @@ impl Visitor<Expr> for Interpreter {
                 Ok(value)
             }
             Expr::Get { object, name } => {
-                let object = self.evaluate(&object)?;
+                let object = self.evaluate(object)?;
                 if let Object::Instance(ref instance) = object {
                     instance.borrow().get(name, &object)
                 } else {
@@ -84,7 +84,7 @@ impl Visitor<Expr> for Interpreter {
                 value,
             } => {
                 let value = self.evaluate(value)?;
-                let object = self.evaluate(&object)?;
+                let object = self.evaluate(object)?;
 
                 if let Object::Instance(instance) = object {
                     instance.borrow_mut().set(name, value.clone());
@@ -151,7 +151,7 @@ impl Visitor<Expr> for Interpreter {
                 paren,
                 arguments,
             } => {
-                let callee = self.evaluate(&callee)?;
+                let callee = self.evaluate(callee)?;
                 match callee {
                     Object::Callable(callable) => {
                         if callable.arity() != arguments.len() {
@@ -191,7 +191,7 @@ impl Visitor<Expr> for Interpreter {
                             args.push(self.evaluate(arg)?);
                         }
 
-                        Class::construct(class.clone(), args, self).map(|i| Object::Instance(i))
+                        Class::construct(class, args, self).map(Object::Instance)
                     }
                     _ => Err(RuntimeError::InvalidOperand {
                         operator: paren.clone(),
@@ -255,7 +255,7 @@ impl Visitor<Stmt> for Interpreter {
                 let mut method_funcs = HashMap::new();
                 for method in methods {
                     if let Stmt::Function { name, params, body } = method {
-                        let is_initializer = if name.lexeme == "init" { true } else { false };
+                        let is_initializer = name.lexeme == "init";
 
                         method_funcs.insert(
                             name.lexeme.clone(),
@@ -353,14 +353,14 @@ impl Visitor<Stmt> for Interpreter {
                 }
             }
             Stmt::While { condition, body } => loop {
-                let value = &self.evaluate(&condition)?;
+                let value = &self.evaluate(condition)?;
                 if !self.is_truthy(value) {
                     break;
                 }
 
                 // We will catch 'Break' runtime errors. That error means that we hit a `break`
                 // statement. Any other error will be propagated up.
-                let result = self.execute(&body);
+                let result = self.execute(body);
 
                 if matches!(result, Err(RuntimeError::Break { token: _ })) {
                     break;
@@ -496,7 +496,7 @@ impl Interpreter {
 
     fn lookup_variable(&self, name: &Token, expr: &Expr) -> Result<Object, RuntimeError> {
         if let Some(&distance) = self.locals.get(&expr.unique_id()) {
-            self.environment.borrow().get_at(distance, &name)
+            self.environment.borrow().get_at(distance, name)
         } else {
             self.globals.borrow().get(name)
         }

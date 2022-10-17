@@ -157,7 +157,7 @@ impl<'a> Visitor<Stmt> for Resolver<'a> {
                 else_branch,
             } => {
                 self.resolve_expr(condition)?;
-                self.resolve_single_stmt(&then_branch)?;
+                self.resolve_single_stmt(then_branch)?;
                 if let Some(stmt) = else_branch {
                     self.resolve_single_stmt(stmt)?;
                 }
@@ -330,7 +330,7 @@ impl<'a> Visitor<Expr> for Resolver<'a> {
                 Ok(())
             }
             Expr::Assignment { name, value } => {
-                self.resolve_expr(&value)?;
+                self.resolve_expr(value)?;
                 self.resolve_local(input, name)
             }
             Expr::Super { keyword, method: _ } => {

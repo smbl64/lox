@@ -8,7 +8,7 @@ pub trait Visitor<I> {
     fn visit(&mut self, input: &I) -> Result<Self::Result, Self::Error>;
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug)]
 pub enum Expr {
     Binary {
         left: Box<Expr>,
@@ -67,6 +67,14 @@ impl Hash for Expr {
     }
 }
 
+impl PartialEq for Expr {
+    fn eq(&self, other: &Self) -> bool {
+        self.unique_id() == other.unique_id()
+    }
+}
+
+impl Eq for Expr {}
+
 impl Expr {
     pub fn int_literal(v: f64) -> Expr {
         Expr::Literal {
@@ -81,8 +89,7 @@ impl Expr {
     }
 
     pub fn unique_id(&self) -> usize {
-        let y = std::ptr::addr_of!(*self) as usize;
-        return y;
+        std::ptr::addr_of!(*self) as usize
     }
 }
 
@@ -131,7 +138,7 @@ pub enum Stmt {
 
 impl AsRef<Stmt> for Stmt {
     fn as_ref(&self) -> &Stmt {
-        &self
+        self
     }
 }
 

@@ -3,7 +3,7 @@ use crate::token::Token;
 use std::error::Error;
 use std::fmt::Display;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum RuntimeError {
     InvalidOperand { operator: Token, msg: String },
     UndefinedVariable { name: Token, msg: String },
@@ -53,7 +53,7 @@ impl Display for ResolverError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.token {
             Some(token) => write!(f, "[line {}] {}", token.line, self.msg),
-            None => write!(f, "[line {}] {}", "?", self.msg),
+            None => write!(f, "[line ?] {}", self.msg),
         }
     }
 }

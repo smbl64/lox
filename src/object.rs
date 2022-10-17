@@ -16,7 +16,6 @@ pub enum Object {
 
 impl PartialEq for Object {
     fn eq(&self, other: &Self) -> bool {
-        //dbg!(other);
         match (self, other) {
             (Self::Null, Self::Null) => true,
             (Self::Boolean(left), Self::Boolean(right)) => left == right,

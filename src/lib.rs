@@ -32,7 +32,7 @@ impl Lox {
 
         Self {
             interpreter: Interpreter::new().with_error_reporting(error_reporter.clone()),
-            error_reporter: error_reporter.clone(),
+            error_reporter,
         }
     }
 }

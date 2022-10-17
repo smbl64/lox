@@ -5,8 +5,8 @@ use std::io::Write;
 use std::path::Path;
 use walkdir::WalkDir;
 
-static TEST_DATA: &'static str = "./tests/data/";
-static TEST_TEMPLATE: &'static str = r#"
+static TEST_DATA: &str = "./tests/data/";
+static TEST_TEMPLATE: &str = r#"
     #[test]
     fn {test_name}() {
         let filename = Path::new("{filename}");
@@ -32,7 +32,7 @@ fn main() {
 
         let test_name = filename
             .replace("./", "")
-            .replace("/", "_")
+            .replace('/', "_")
             .replace(".lox", "")
             .replace("tests_data_", "");
 
