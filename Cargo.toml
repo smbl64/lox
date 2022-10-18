@@ -16,7 +16,11 @@ anyhow = "1.0.62"
 
 [dev-dependencies]
 assert_cmd = "2"
-walkdir = "2"
+criterion = "0.3"
 
 [build-dependencies]
 walkdir = "2"
+
+[[bench]]
+name = "my_benchmark"
+harness = false
