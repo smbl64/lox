@@ -103,7 +103,7 @@ impl ErrorReporter {
         self.had_error = true;
     }
 
-    pub fn runtime_error(&mut self, e: RuntimeError) {
+    pub fn runtime_error(&mut self, e: &RuntimeError) {
         eprintln!("{}", e);
         self.had_runtime_error = true;
     }

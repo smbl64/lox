@@ -388,7 +388,7 @@ impl Interpreter {
         }
         let reporter = self.error_reporter.as_ref().unwrap();
         let mut reporter = reporter.borrow_mut();
-        reporter.runtime_error(e);
+        reporter.runtime_error(&e);
     }
 
     pub fn execute(&mut self, stmt: &Stmt) -> Result<(), RuntimeError> {

@@ -103,9 +103,7 @@ impl Scanner {
                     self.add_token(TokenType::Slash);
                 }
             }
-            ' ' => {}
-            '\r' => {}
-            '\t' => {}
+            ' ' | '\r' | '\t' => {}
             '\n' => {
                 self.line += 1;
             }
@@ -141,7 +139,7 @@ impl Scanner {
     fn add_token_with_literal(&mut self, token_type: TokenType, literal_value: Option<Object>) {
         let text = self.source_substring(self.start, self.current);
         let token = Token::new(token_type, &text, literal_value, self.line);
-        self.tokens.push(token)
+        self.tokens.push(token);
     }
 
     fn match_next(&mut self, expected: char) -> bool {

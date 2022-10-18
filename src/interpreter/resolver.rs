@@ -326,8 +326,7 @@ impl<'a> Visitor<Expr> for Resolver<'a> {
                     }
                 }
 
-                self.resolve_local(input, name)?;
-                Ok(())
+                self.resolve_local(input, name)
             }
             Expr::Assignment { name, value } => {
                 self.resolve_expr(value)?;

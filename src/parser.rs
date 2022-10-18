@@ -176,10 +176,10 @@ impl Parser {
 
     fn return_statement(&mut self) -> Option<Stmt> {
         let keyword = self.previous();
-        let value = if !self.check(&TokenType::Semicolon) {
-            Some(self.expression()?)
-        } else {
+        let value = if self.check(&TokenType::Semicolon) {
             None
+        } else {
+            Some(self.expression()?)
         };
 
         self.consume(TokenType::Semicolon, "Expect ';' after 'return'")?;
@@ -206,19 +206,19 @@ impl Parser {
             Some(self.expression_statement()?)
         };
 
-        let condition = if !self.check(&TokenType::Semicolon) {
-            self.expression()?
-        } else {
+        let condition = if self.check(&TokenType::Semicolon) {
             Expr::Literal {
                 value: Object::Boolean(true),
             }
+        } else {
+            self.expression()?
         };
         self.consume(TokenType::Semicolon, "Expect ';' after 'for' condition")?;
 
-        let increment = if !self.check(&TokenType::RightParen) {
-            Some(self.expression()?)
-        } else {
+        let increment = if self.check(&TokenType::RightParen) {
             None
+        } else {
+            Some(self.expression()?)
         };
         self.consume(TokenType::RightParen, "Expect ')' after 'for' clauses")?;
 
@@ -573,11 +573,11 @@ impl Parser {
     }
 
     fn peek(&self) -> &Token {
-        self.tokens.get(self.current).unwrap()
+        &self.tokens[self.current]
     }
 
     fn previous(&mut self) -> Token {
-        self.tokens.get(self.current - 1).unwrap().clone()
+        self.tokens[self.current - 1].clone()
     }
 
     fn synchronize(&mut self) {
