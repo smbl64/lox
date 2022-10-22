@@ -144,11 +144,8 @@ impl AsRef<Stmt> for Stmt {
 
 pub struct AstPrinter;
 
-impl Visitor<Expr> for AstPrinter {
-    type Result = String;
-    type Error = ();
-
-    fn visit(&mut self, expr: &Expr) -> Result<String, ()> {
+impl AstPrinter {
+    pub fn visit(&mut self, expr: &Expr) -> Result<String, ()> {
         let s = match expr {
             Expr::Binary {
                 left,

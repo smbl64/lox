@@ -39,14 +39,11 @@ impl Interpreter {
     }
 }
 
-impl Visitor<Expr> for Interpreter {
-    type Result = Object;
-    type Error = RuntimeError;
-
-    fn visit(&mut self, expr: &Expr) -> InterpreterResult {
+impl Interpreter {
+    fn visit_expr(&mut self, expr: &Expr) -> InterpreterResult {
         match expr {
             Expr::Literal { value } => Ok(value.clone()),
-            Expr::Grouping { expr: inner } => self.visit(inner.as_ref()),
+            Expr::Grouping { expr: inner } => self.visit_expr(inner.as_ref()),
             Expr::Unary { operator, right } => self.visit_unary(operator, right),
             Expr::Binary {
                 left,
@@ -55,7 +52,7 @@ impl Visitor<Expr> for Interpreter {
             } => self.visit_binary(left, operator, right),
             Expr::Variable { name } => self.lookup_variable(name, expr),
             Expr::Assignment { name, value } => {
-                let value = self.visit(value.as_ref())?;
+                let value = self.visit_expr(value.as_ref())?;
 
                 if let Some(&distance) = self.locals.get(&expr.unique_id()) {
                     self.environment
@@ -201,13 +198,109 @@ impl Visitor<Expr> for Interpreter {
             }
         }
     }
+
+    fn is_truthy(&self, value: &Object) -> bool {
+        !matches!(value, Object::Null | Object::Boolean(false))
+    }
+
+    fn visit_unary(&mut self, operator: &Token, right: &Expr) -> InterpreterResult {
+        let value = self.visit_expr(right)?;
+        match operator.token_type {
+            TokenType::Minus => {
+                if let Object::Number(n) = value {
+                    Ok(Object::Number(-n))
+                } else {
+                    Err(RuntimeError::InvalidOperand {
+                        operator: operator.clone(),
+                        msg: "Operand must be a number".to_owned(),
+                    })
+                }
+            }
+            TokenType::Bang => Ok(Object::Boolean(!self.is_truthy(&value))),
+
+            // Unreachable code. We don't have any unary expression except the ones above.
+            _ => Ok(Object::Null),
+        }
+    }
+
+    fn visit_binary(&mut self, left: &Expr, operator: &Token, right: &Expr) -> InterpreterResult {
+        let left_value = self.visit_expr(left)?;
+        let right_value = self.visit_expr(right)?;
+
+        match operator.token_type {
+            TokenType::Plus => {
+                if let (Some(l), Some(r)) = (left_value.number(), right_value.number()) {
+                    Ok(Object::Number(l + r))
+                } else if let (Some(l), Some(r)) = (left_value.string(), right_value.string()) {
+                    Ok(Object::String(format!("{}{}", l, r)))
+                } else {
+                    Err(RuntimeError::InvalidOperand {
+                        operator: operator.clone(),
+                        msg: "Operands must be two numbers or two strings".to_owned(),
+                    })
+                }
+            }
+            TokenType::Minus => self
+                .check_number_operands(operator, &left_value, &right_value)
+                .map(|(l, r)| Object::Number(l - r)),
+            TokenType::Star => self
+                .check_number_operands(operator, &left_value, &right_value)
+                .map(|(l, r)| Object::Number(l * r)),
+            TokenType::Slash => self
+                .check_number_operands(operator, &left_value, &right_value)
+                .map(|(l, r)| Object::Number(l / r)),
+            TokenType::Greater => self
+                .check_number_operands(operator, &left_value, &right_value)
+                .map(|(l, r)| Object::Boolean(l > r)),
+            TokenType::GreaterEqual => self
+                .check_number_operands(operator, &left_value, &right_value)
+                .map(|(l, r)| Object::Boolean(l >= r)),
+            TokenType::Less => self
+                .check_number_operands(operator, &left_value, &right_value)
+                .map(|(l, r)| Object::Boolean(l < r)),
+            TokenType::LessEqual => self
+                .check_number_operands(operator, &left_value, &right_value)
+                .map(|(l, r)| Object::Boolean(l <= r)),
+
+            TokenType::EqualEqual => Ok(Object::Boolean(left_value == right_value)),
+            TokenType::BangEqual => Ok(Object::Boolean(left_value != right_value)),
+
+            // Unreachable code
+            _ => Ok(Object::Null),
+        }
+    }
+
+    fn check_number_operands(
+        &self,
+        operator: &Token,
+        left: &Object,
+        right: &Object,
+    ) -> Result<(f64, f64), RuntimeError> {
+        if let (Some(l), Some(r)) = (left.number(), right.number()) {
+            Ok((l, r))
+        } else {
+            Err(RuntimeError::InvalidOperand {
+                operator: operator.clone(),
+                msg: "Operands must be numbers".to_owned(),
+            })
+        }
+    }
+
+    pub fn evaluate(&mut self, expression: &Expr) -> InterpreterResult {
+        self.visit_expr(expression)
+    }
+
+    fn lookup_variable(&self, name: &Token, expr: &Expr) -> Result<Object, RuntimeError> {
+        if let Some(&distance) = self.locals.get(&expr.unique_id()) {
+            self.environment.borrow().get_at(distance, name)
+        } else {
+            self.globals.borrow().get(name)
+        }
+    }
 }
 
-impl Visitor<Stmt> for Interpreter {
-    type Result = ();
-    type Error = RuntimeError;
-
-    fn visit(&mut self, stmt: &Stmt) -> Result<(), RuntimeError> {
+impl Interpreter {
+    fn visit_stmt(&mut self, stmt: &Stmt) -> Result<(), RuntimeError> {
         match stmt {
             Stmt::Expression { expr } => {
                 self.evaluate(expr)?;
@@ -371,9 +464,7 @@ impl Visitor<Stmt> for Interpreter {
         };
         Ok(())
     }
-}
 
-impl Interpreter {
     pub fn interpret(&mut self, statements: &[Stmt]) {
         for stmt in statements {
             if let Err(e) = self.execute(stmt) {
@@ -392,7 +483,7 @@ impl Interpreter {
     }
 
     pub fn execute(&mut self, stmt: &Stmt) -> Result<(), RuntimeError> {
-        self.visit(stmt)
+        self.visit_stmt(stmt)
     }
 
     pub fn execute_block<I, R>(
@@ -417,105 +508,6 @@ impl Interpreter {
 
         self.environment = prev_env;
         Ok(())
-    }
-
-    pub fn evaluate(&mut self, expression: &Expr) -> InterpreterResult {
-        self.visit(expression)
-    }
-
-    fn is_truthy(&self, value: &Object) -> bool {
-        !matches!(value, Object::Null | Object::Boolean(false))
-    }
-
-    fn visit_unary(&mut self, operator: &Token, right: &Expr) -> InterpreterResult {
-        let value = self.visit(right)?;
-        match operator.token_type {
-            TokenType::Minus => {
-                if let Object::Number(n) = value {
-                    Ok(Object::Number(-n))
-                } else {
-                    Err(RuntimeError::InvalidOperand {
-                        operator: operator.clone(),
-                        msg: "Operand must be a number".to_owned(),
-                    })
-                }
-            }
-            TokenType::Bang => Ok(Object::Boolean(!self.is_truthy(&value))),
-
-            // Unreachable code. We don't have any unary expression except the ones above.
-            _ => Ok(Object::Null),
-        }
-    }
-
-    fn visit_binary(&mut self, left: &Expr, operator: &Token, right: &Expr) -> InterpreterResult {
-        let left_value = self.visit(left)?;
-        let right_value = self.visit(right)?;
-
-        match operator.token_type {
-            TokenType::Plus => {
-                if let (Some(l), Some(r)) = (left_value.number(), right_value.number()) {
-                    Ok(Object::Number(l + r))
-                } else if let (Some(l), Some(r)) = (left_value.string(), right_value.string()) {
-                    Ok(Object::String(format!("{}{}", l, r)))
-                } else {
-                    Err(RuntimeError::InvalidOperand {
-                        operator: operator.clone(),
-                        msg: "Operands must be two numbers or two strings".to_owned(),
-                    })
-                }
-            }
-            TokenType::Minus => self
-                .check_number_operands(operator, &left_value, &right_value)
-                .map(|(l, r)| Object::Number(l - r)),
-            TokenType::Star => self
-                .check_number_operands(operator, &left_value, &right_value)
-                .map(|(l, r)| Object::Number(l * r)),
-            TokenType::Slash => self
-                .check_number_operands(operator, &left_value, &right_value)
-                .map(|(l, r)| Object::Number(l / r)),
-            TokenType::Greater => self
-                .check_number_operands(operator, &left_value, &right_value)
-                .map(|(l, r)| Object::Boolean(l > r)),
-            TokenType::GreaterEqual => self
-                .check_number_operands(operator, &left_value, &right_value)
-                .map(|(l, r)| Object::Boolean(l >= r)),
-            TokenType::Less => self
-                .check_number_operands(operator, &left_value, &right_value)
-                .map(|(l, r)| Object::Boolean(l < r)),
-            TokenType::LessEqual => self
-                .check_number_operands(operator, &left_value, &right_value)
-                .map(|(l, r)| Object::Boolean(l <= r)),
-
-            TokenType::EqualEqual => Ok(Object::Boolean(left_value == right_value)),
-            TokenType::BangEqual => Ok(Object::Boolean(left_value != right_value)),
-
-            // Unreachable code
-            _ => Ok(Object::Null),
-        }
-    }
-
-    fn lookup_variable(&self, name: &Token, expr: &Expr) -> Result<Object, RuntimeError> {
-        if let Some(&distance) = self.locals.get(&expr.unique_id()) {
-            self.environment.borrow().get_at(distance, name)
-        } else {
-            self.globals.borrow().get(name)
-        }
-    }
-
-    fn check_number_operands(
-        &self,
-        operator: &Token,
-        left: &Object,
-        right: &Object,
-    ) -> Result<(f64, f64), RuntimeError> {
-        if let (Some(l), Some(r)) = (left.number(), right.number()) {
-            Ok((l, r))
-        } else {
-            Err(RuntimeError::InvalidOperand {
-                operator: operator.clone(),
-                msg: "Operands must be numbers".to_owned(),
-            })
-        }
     }
 
     pub fn resolve(&mut self, input: &Expr, depth: usize) {

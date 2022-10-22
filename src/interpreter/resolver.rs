@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    prelude::{Expr, Stmt, Visitor},
+    prelude::{Expr, Stmt},
     token::Token,
 };
 
@@ -41,11 +41,8 @@ impl<'i> Resolver<'i> {
     }
 }
 
-impl<'a> Visitor<Stmt> for Resolver<'a> {
-    type Error = ResolverError;
-    type Result = ();
-
-    fn visit(&mut self, input: &Stmt) -> Result<Self::Result, Self::Error> {
+impl<'a> Resolver<'a> {
+    fn visit_stmt(&mut self, input: &Stmt) -> Result<(), ResolverError> {
         match input {
             Stmt::Block { statements } => {
                 self.begin_scope();
@@ -259,11 +256,11 @@ impl<'a> Resolver<'a> {
     }
 
     fn resolve_single_stmt(&mut self, stmt: &Stmt) -> Result<(), ResolverError> {
-        self.visit(stmt)
+        self.visit_stmt(stmt)
     }
 
     fn resolve_expr(&mut self, expr: &Expr) -> Result<(), ResolverError> {
-        self.visit(expr)
+        self.visit_expr(expr)
     }
 
     fn resolve_this(&mut self, expr: &Expr, keyword: &Token) -> Result<(), ResolverError> {
@@ -307,11 +304,8 @@ impl<'a> Resolver<'a> {
     }
 }
 
-impl<'a> Visitor<Expr> for Resolver<'a> {
-    type Error = ResolverError;
-    type Result = ();
-
-    fn visit(&mut self, input: &Expr) -> Result<Self::Result, Self::Error> {
+impl<'a> Resolver<'a> {
+    fn visit_expr(&mut self, input: &Expr) -> Result<(), ResolverError> {
         match input {
             Expr::Variable { name } => {
                 if !self.scopes.is_empty() {
