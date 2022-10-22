@@ -40,19 +40,19 @@ impl Interpreter {
 }
 
 impl Interpreter {
-    fn visit_expr(&mut self, expr: &Expr) -> InterpreterResult {
+    pub fn evaluate_expr(&mut self, expr: &Expr) -> InterpreterResult {
         match expr {
             Expr::Literal { value } => Ok(value.clone()),
-            Expr::Grouping { expr: inner } => self.visit_expr(inner.as_ref()),
-            Expr::Unary { operator, right } => self.visit_unary(operator, right),
+            Expr::Grouping { expr: inner } => self.evaluate_expr(inner.as_ref()),
+            Expr::Unary { operator, right } => self.evaluate_unary(operator, right),
             Expr::Binary {
                 left,
                 operator,
                 right,
-            } => self.visit_binary(left, operator, right),
+            } => self.evaluate_binary(left, operator, right),
             Expr::Variable { name } => self.lookup_variable(name, expr),
             Expr::Assignment { name, value } => {
-                let value = self.visit_expr(value.as_ref())?;
+                let value = self.evaluate_expr(value.as_ref())?;
 
                 if let Some(&distance) = self.locals.get(&expr.unique_id()) {
                     self.environment
@@ -65,7 +65,7 @@ impl Interpreter {
                 Ok(value)
             }
             Expr::Get { object, name } => {
-                let object = self.evaluate(object)?;
+                let object = self.evaluate_expr(object)?;
                 if let Object::Instance(ref instance) = object {
                     instance.borrow().get(name, &object)
                 } else {
@@ -80,8 +80,8 @@ impl Interpreter {
                 name,
                 value,
             } => {
-                let value = self.evaluate(value)?;
-                let object = self.evaluate(object)?;
+                let value = self.evaluate_expr(value)?;
+                let object = self.evaluate_expr(object)?;
 
                 if let Object::Instance(instance) = object {
                     instance.borrow_mut().set(name, value.clone());
@@ -128,7 +128,7 @@ impl Interpreter {
                 operator,
                 right,
             } => {
-                let left_val = self.evaluate(left)?;
+                let left_val = self.evaluate_expr(left)?;
 
                 if operator.token_type == TokenType::Or {
                     if self.is_truthy(&left_val) {
@@ -141,14 +141,14 @@ impl Interpreter {
                     }
                 }
 
-                self.evaluate(right)
+                self.evaluate_expr(right)
             }
             Expr::Call {
                 callee,
                 paren,
                 arguments,
             } => {
-                let callee = self.evaluate(callee)?;
+                let callee = self.evaluate_expr(callee)?;
                 match callee {
                     Object::Callable(callable) => {
                         if callable.arity() != arguments.len() {
@@ -164,7 +164,7 @@ impl Interpreter {
                         // Evaluate all arguments
                         let mut args = vec![];
                         for arg in arguments {
-                            args.push(self.evaluate(arg)?);
+                            args.push(self.evaluate_expr(arg)?);
                         }
 
                         callable.call(self, args)
@@ -185,7 +185,7 @@ impl Interpreter {
                         // Evaluate all arguments
                         let mut args = vec![];
                         for arg in arguments {
-                            args.push(self.evaluate(arg)?);
+                            args.push(self.evaluate_expr(arg)?);
                         }
 
                         Class::construct(class, args, self).map(Object::Instance)
@@ -203,8 +203,8 @@ impl Interpreter {
         !matches!(value, Object::Null | Object::Boolean(false))
     }
 
-    fn visit_unary(&mut self, operator: &Token, right: &Expr) -> InterpreterResult {
-        let value = self.visit_expr(right)?;
+    fn evaluate_unary(&mut self, operator: &Token, right: &Expr) -> InterpreterResult {
+        let value = self.evaluate_expr(right)?;
         match operator.token_type {
             TokenType::Minus => {
                 if let Object::Number(n) = value {
@@ -223,9 +223,14 @@ impl Interpreter {
         }
     }
 
-    fn visit_binary(&mut self, left: &Expr, operator: &Token, right: &Expr) -> InterpreterResult {
-        let left_value = self.visit_expr(left)?;
-        let right_value = self.visit_expr(right)?;
+    fn evaluate_binary(
+        &mut self,
+        left: &Expr,
+        operator: &Token,
+        right: &Expr,
+    ) -> InterpreterResult {
+        let left_value = self.evaluate_expr(left)?;
+        let right_value = self.evaluate_expr(right)?;
 
         match operator.token_type {
             TokenType::Plus => {
@@ -286,10 +291,6 @@ impl Interpreter {
         }
     }
 
-    pub fn evaluate(&mut self, expression: &Expr) -> InterpreterResult {
-        self.visit_expr(expression)
-    }
-
     fn lookup_variable(&self, name: &Token, expr: &Expr) -> Result<Object, RuntimeError> {
         if let Some(&distance) = self.locals.get(&expr.unique_id()) {
             self.environment.borrow().get_at(distance, name)
@@ -300,10 +301,50 @@ impl Interpreter {
 }
 
 impl Interpreter {
-    fn visit_stmt(&mut self, stmt: &Stmt) -> Result<(), RuntimeError> {
+    pub fn interpret(&mut self, statements: &[Stmt]) {
+        for stmt in statements {
+            if let Err(e) = self.execute(stmt) {
+                self.runtime_error(e);
+            }
+        }
+    }
+
+    pub fn execute(&mut self, stmt: &Stmt) -> Result<(), RuntimeError> {
+        self.evaluate_stmt(stmt)
+    }
+
+    pub fn execute_block<I, R>(
+        &mut self,
+        statements: I,
+        environment: Rc<RefCell<Environment>>,
+    ) -> Result<(), RuntimeError>
+    where
+        I: IntoIterator<Item = R>,
+        R: AsRef<Stmt>,
+    {
+        let prev_env = self.environment.clone();
+        self.environment = environment;
+
+        for s in statements {
+            let result = self.execute(s.as_ref());
+            if matches!(result, Err(_)) {
+                self.environment = prev_env;
+                return result;
+            }
+        }
+
+        self.environment = prev_env;
+        Ok(())
+    }
+
+    pub fn resolve(&mut self, input: &Expr, depth: usize) {
+        self.locals.insert(input.unique_id(), depth);
+    }
+
+    fn evaluate_stmt(&mut self, stmt: &Stmt) -> Result<(), RuntimeError> {
         match stmt {
             Stmt::Expression { expr } => {
-                self.evaluate(expr)?;
+                self.evaluate_expr(expr)?;
             }
             Stmt::Class {
                 name,
@@ -312,7 +353,7 @@ impl Interpreter {
             } => {
                 // TODO: this looks really ugly!!
                 let superclass = if let Some(s) = superclass {
-                    let obj = self.evaluate(s)?;
+                    let obj = self.evaluate_expr(s)?;
                     match obj {
                         Object::Class(c) => Some(c),
                         _ => {
@@ -398,7 +439,7 @@ impl Interpreter {
             }
             Stmt::Return { keyword, value } => {
                 let value = if let Some(expr) = value {
-                    self.evaluate(expr)?
+                    self.evaluate_expr(expr)?
                 } else {
                     Object::Null
                 };
@@ -410,7 +451,7 @@ impl Interpreter {
             }
             Stmt::Print { exprs } => {
                 for expr in exprs {
-                    let value = self.evaluate(expr)?;
+                    let value = self.evaluate_expr(expr)?;
                     print!("{}", value);
                 }
 
@@ -418,7 +459,7 @@ impl Interpreter {
             }
             Stmt::Var { name, initializer } => {
                 let value = if let Some(expr) = initializer {
-                    self.evaluate(expr)?
+                    self.evaluate_expr(expr)?
                 } else {
                     Object::Null
                 };
@@ -437,7 +478,7 @@ impl Interpreter {
                 then_branch,
                 else_branch,
             } => {
-                let condition_result = self.evaluate(condition)?;
+                let condition_result = self.evaluate_expr(condition)?;
 
                 if self.is_truthy(&condition_result) {
                     self.execute(then_branch.as_ref())?;
@@ -446,7 +487,7 @@ impl Interpreter {
                 }
             }
             Stmt::While { condition, body } => loop {
-                let value = &self.evaluate(condition)?;
+                let value = &self.evaluate_expr(condition)?;
                 if !self.is_truthy(value) {
                     break;
                 }
@@ -465,14 +506,6 @@ impl Interpreter {
         Ok(())
     }
 
-    pub fn interpret(&mut self, statements: &[Stmt]) {
-        for stmt in statements {
-            if let Err(e) = self.execute(stmt) {
-                self.runtime_error(e);
-            }
-        }
-    }
-
     fn runtime_error(&self, e: RuntimeError) {
         if self.error_reporter.is_none() {
             return;
@@ -480,38 +513,6 @@ impl Interpreter {
         let reporter = self.error_reporter.as_ref().unwrap();
         let mut reporter = reporter.borrow_mut();
         reporter.runtime_error(&e);
-    }
-
-    pub fn execute(&mut self, stmt: &Stmt) -> Result<(), RuntimeError> {
-        self.visit_stmt(stmt)
-    }
-
-    pub fn execute_block<I, R>(
-        &mut self,
-        statements: I,
-        environment: Rc<RefCell<Environment>>,
-    ) -> Result<(), RuntimeError>
-    where
-        I: IntoIterator<Item = R>,
-        R: AsRef<Stmt>,
-    {
-        let prev_env = self.environment.clone();
-        self.environment = environment;
-
-        for s in statements {
-            let result = self.execute(s.as_ref());
-            if matches!(result, Err(_)) {
-                self.environment = prev_env;
-                return result;
-            }
-        }
-
-        self.environment = prev_env;
-        Ok(())
-    }
-
-    pub fn resolve(&mut self, input: &Expr, depth: usize) {
-        self.locals.insert(input.unique_id(), depth);
     }
 }
 
@@ -539,7 +540,7 @@ mod tests {
         ($source:literal, $expected:expr, $lit_type:path) => {
             let mut ipr = Interpreter::new();
             let expr = make_expression($source);
-            let res = ipr.evaluate(&expr);
+            let res = ipr.evaluate_expr(&expr);
             assert!(res.is_ok());
             assert_eq!(res.unwrap(), $lit_type($expected));
         };
