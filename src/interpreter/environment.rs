@@ -10,19 +10,29 @@ pub struct Environment {
     values: HashMap<String, Object>,
 }
 
-impl Environment {
-    pub fn new() -> Self {
+impl Default for Environment {
+    fn default() -> Self {
         Self {
             values: HashMap::new(),
             enclosing: None,
         }
     }
+}
 
-    pub fn with_enclosing(enclosing: Rc<RefCell<Environment>>) -> Self {
+impl Environment {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn with_enclosing(self, enclosing: Rc<RefCell<Environment>>) -> Self {
         Self {
-            values: HashMap::new(),
             enclosing: Some(enclosing),
+            ..Default::default()
         }
+    }
+
+    pub fn as_rc(self) -> Rc<RefCell<Self>> {
+        Rc::new(RefCell::new(self))
     }
 
     pub fn define(&mut self, name: &str, value: Object) {

@@ -1,4 +1,4 @@
-use std::{borrow::BorrowMut, cell::RefCell, fmt::Display, rc::Rc};
+use std::{cell::RefCell, fmt::Display, rc::Rc};
 
 use crate::prelude::*;
 
@@ -29,9 +29,10 @@ impl LoxFunction {
     }
 
     pub fn bind(&self, instance: Object) -> Rc<LoxFunction> {
-        let mut env = Environment::with_enclosing(self.closure.clone());
+        let env = Environment::new()
+            .with_enclosing(self.closure.clone())
+            .as_rc();
         env.borrow_mut().define("this", instance);
-        let env = Rc::new(RefCell::new(env));
 
         Rc::new(LoxFunction::new(
             self.name.clone(),
@@ -53,12 +54,17 @@ impl Callable for LoxFunction {
         interpret: &mut Interpreter,
         arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        let mut environment = Environment::with_enclosing(self.closure.clone());
-        for (arg, param) in arguments.iter().zip(&self.params) {
-            environment.define(param.lexeme.as_str(), arg.clone());
+        let environment = Environment::new()
+            .with_enclosing(self.closure.clone())
+            .as_rc();
+
+        {
+            let mut env_borrow = environment.borrow_mut();
+            for (arg, param) in arguments.iter().zip(&self.params) {
+                env_borrow.define(param.lexeme.as_str(), arg.clone());
+            }
         }
 
-        let environment = Rc::new(RefCell::new(environment));
         let res = interpret.execute_block(&self.body, environment);
 
         // If this is an initializer and we didn't get an error, return "this" as the return value

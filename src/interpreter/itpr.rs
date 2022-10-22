@@ -16,7 +16,7 @@ pub struct Interpreter {
 
 impl Interpreter {
     pub fn new() -> Self {
-        let globals = Rc::new(RefCell::new(Environment::new()));
+        let globals = Environment::new().as_rc();
         let environment = globals.clone();
 
         globals
@@ -376,9 +376,9 @@ impl Interpreter {
                     .define(&name.lexeme, Object::Null);
 
                 if let Some(ref superclass) = superclass {
-                    self.environment = Rc::new(RefCell::new(Environment::with_enclosing(
-                        self.environment.clone(),
-                    )));
+                    self.environment = Environment::new()
+                        .with_enclosing(self.environment.clone())
+                        .as_rc();
 
                     self.environment
                         .borrow_mut()
@@ -468,8 +468,9 @@ impl Interpreter {
             }
             Stmt::Block { statements } => {
                 // Create a new environment for executing the block
-                let new_env = Environment::with_enclosing(self.environment.clone());
-                let new_env = Rc::new(RefCell::new(new_env));
+                let new_env = Environment::new()
+                    .with_enclosing(self.environment.clone())
+                    .as_rc();
 
                 self.execute_block(statements, new_env)?;
             }
