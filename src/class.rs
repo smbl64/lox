@@ -5,7 +5,7 @@ use std::rc::Rc;
 
 use crate::interpreter::Interpreter;
 use crate::object::Object;
-use crate::prelude::{LoxFunction, RuntimeError};
+use crate::prelude::{LoxFunction, RuntimeError, UniqueId};
 use crate::token::{Callable, Token};
 
 #[derive(Debug, Clone)]
@@ -106,8 +106,8 @@ impl Instance {
         self.fields.insert(field.lexeme.clone(), value);
     }
 
-    pub fn unique_id(&self) -> usize {
-        std::ptr::addr_of!(*self) as usize
+    pub fn unique_id(&self) -> UniqueId {
+        UniqueId(std::ptr::addr_of!(*self) as usize)
     }
 }
 

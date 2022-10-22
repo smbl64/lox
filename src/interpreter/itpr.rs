@@ -10,7 +10,7 @@ type InterpreterResult = Result<Object, RuntimeError>;
 pub struct Interpreter {
     pub globals: Rc<RefCell<Environment>>,
     environment: Rc<RefCell<Environment>>,
-    locals: HashMap<usize, usize>, // unique id -> depth
+    locals: HashMap<UniqueId, usize>, // unique id -> depth
     error_reporter: Option<SharedErrorReporter>,
 }
 

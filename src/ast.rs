@@ -2,11 +2,8 @@ use std::{hash::Hash, rc::Rc};
 
 use crate::prelude::*;
 
-pub trait Visitor<I> {
-    type Result;
-    type Error;
-    fn visit(&mut self, input: &I) -> Result<Self::Result, Self::Error>;
-}
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct UniqueId(pub usize);
 
 #[derive(Debug)]
 pub enum Expr {
@@ -88,8 +85,8 @@ impl Expr {
         }
     }
 
-    pub fn unique_id(&self) -> usize {
-        std::ptr::addr_of!(*self) as usize
+    pub fn unique_id(&self) -> UniqueId {
+        UniqueId(std::ptr::addr_of!(*self) as usize)
     }
 }
 
