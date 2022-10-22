@@ -16,7 +16,10 @@ fn fibonacci() {
 }
 
 fn criterion_benchmark(c: &mut Criterion) {
-    c.bench_function("fib 25", |b| b.iter(|| fibonacci()));
+    let mut group = c.benchmark_group("my-benchmark");
+    group.sample_size(20);
+    group.bench_function("fib 25", |b| b.iter(|| fibonacci()));
+    group.finish();
 }
 
 criterion_group!(benches, criterion_benchmark);
