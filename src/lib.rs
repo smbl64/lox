@@ -4,6 +4,7 @@
 mod ast;
 mod class;
 mod environment;
+mod error;
 mod func;
 mod interpreter;
 mod native;
@@ -17,6 +18,7 @@ pub mod prelude {
     pub use crate::ast::*;
     pub use crate::class::*;
     pub use crate::environment::Environment;
+    pub use crate::error::*;
     pub use crate::func::LoxFunction;
     pub use crate::interpreter::*;
     pub use crate::object::*;
