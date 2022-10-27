@@ -1,4 +1,6 @@
 #![allow(clippy::new_without_default)]
+#![allow(clippy::vtable_address_comparisons)]
+
 mod ast;
 mod class;
 mod interpreter;
