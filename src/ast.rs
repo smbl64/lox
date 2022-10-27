@@ -74,32 +74,31 @@ impl AsRef<Stmt> for Stmt {
 pub struct AstPrinter;
 
 impl AstPrinter {
-    pub fn visit(&mut self, expr: &Expr) -> Result<String, ()> {
-        let s = match expr {
+    pub fn to_string(expr: &Expr) -> String {
+        match expr {
             Expr::Binary { left, operator, right } => {
-                format!("({} {} {})", operator.lexeme, self.visit(left)?, self.visit(right)?)
+                format!("({} {} {})", operator.lexeme, Self::to_string(left), Self::to_string(right))
             }
-            Expr::Grouping { expr } => format!("(group {})", self.visit(expr)?),
+            Expr::Grouping { expr } => format!("(group {})", Self::to_string(expr)),
             Expr::Literal { value } => format!("{value}"),
             Expr::Unary { operator, right } => {
-                format!("({} {})", operator.lexeme, self.visit(right)?)
+                format!("({} {})", operator.lexeme, Self::to_string(right))
             }
             Expr::Variable { name } => format!("{name}"),
-            Expr::Assignment { name, value } => format!("{name} = {}", self.visit(value)?),
+            Expr::Assignment { name, value } => format!("{name} = {}", Self::to_string(value)),
             Expr::Logical { left, operator, right } => {
-                format!("({} {} {})", operator.lexeme, self.visit(left)?, self.visit(right)?)
+                format!("({} {} {})", operator.lexeme, Self::to_string(left), Self::to_string(right))
             }
             Expr::Call { callee, paren: _, arguments } => {
-                format!("{:?}({arguments:?})", self.visit(callee)?)
+                format!("{:?}({arguments:?})", Self::to_string(callee))
             }
             Expr::This { keyword } => format!("{keyword}"),
-            Expr::Get { object, name } => format!("{:?}.{name}", self.visit(object)?),
+            Expr::Get { object, name } => format!("{:?}.{name}", Self::to_string(object)),
             Expr::Set { object, name, value } => {
-                format!("{:?}.{name} = {:?}", self.visit(object)?, self.visit(value)?)
+                format!("{:?}.{name} = {:?}", Self::to_string(object), Self::to_string(value))
             }
             Expr::Super { keyword, method } => format!("{keyword}.{method}"),
-        };
-        Ok(s)
+        }
     }
 }
 
@@ -120,10 +119,7 @@ mod tests {
             right: Box::new(Expr::Grouping { expr: Box::new(Expr::int_literal(45.67)) }),
         };
 
-        let mut printer = AstPrinter;
-        let res = printer.visit(&expr);
-        assert!(res.is_ok());
-        let res = res.unwrap();
+        let res = AstPrinter::to_string(&expr);
         assert_eq!(res, "(* (- 123) (group 45.67))".to_owned());
     }
 }
