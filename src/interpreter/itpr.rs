@@ -2,7 +2,6 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use super::func::LoxFunction;
 use crate::prelude::*;
 use crate::SharedErrorReporter;
 
@@ -20,7 +19,7 @@ impl Interpreter {
         let globals = Environment::new().as_rc();
         let environment = globals.clone();
 
-        globals.borrow_mut().define("clock", Object::Callable(super::native::clock()));
+        globals.borrow_mut().define("clock", Object::Callable(crate::native::clock()));
 
         Self { globals, environment, locals: HashMap::new(), error_reporter: None }
     }

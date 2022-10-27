@@ -1,4 +1,3 @@
-use std::error::Error;
 use std::fmt::Display;
 
 use crate::object::Object;
@@ -34,26 +33,3 @@ impl Display for RuntimeError {
         }
     }
 }
-
-#[derive(Debug)]
-pub struct ResolverError {
-    pub token: Option<Token>,
-    pub msg: String,
-}
-
-impl ResolverError {
-    pub fn new<T>(token: Option<Token>, msg: impl AsRef<str>) -> Result<T, Self> {
-        Err(Self { token, msg: msg.as_ref().to_owned() })
-    }
-}
-
-impl Display for ResolverError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match &self.token {
-            Some(token) => write!(f, "[line {}] {}", token.line, self.msg),
-            None => write!(f, "[line ?] {}", self.msg),
-        }
-    }
-}
-
-impl Error for ResolverError {}

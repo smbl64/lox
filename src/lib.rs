@@ -3,18 +3,25 @@
 
 mod ast;
 mod class;
+mod environment;
+mod func;
 mod interpreter;
+mod native;
 mod object;
 mod parser;
+mod resolver;
 mod scanner;
 mod token;
 
 pub mod prelude {
     pub use crate::ast::*;
     pub use crate::class::*;
+    pub use crate::environment::Environment;
+    pub use crate::func::LoxFunction;
     pub use crate::interpreter::*;
     pub use crate::object::*;
     pub use crate::parser::*;
+    pub use crate::resolver::Resolver;
     pub use crate::scanner::*;
     pub use crate::token::*;
 }

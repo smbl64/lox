@@ -7,7 +7,7 @@ edition = "2021"
 path = "src/lib.rs"
 
 [[bin]]
-path = "src/main.rs"
+path = "src/bin/main.rs"
 name = "lox"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
