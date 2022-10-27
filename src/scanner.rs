@@ -195,7 +195,7 @@ impl Scanner {
 
         let text = self.source_substring(self.start, self.current);
         let value =
-            text.parse::<f64>().unwrap_or_else(|_| panic!("failed to parse number: {}", text));
+            text.parse::<f64>().unwrap_or_else(|_| panic!("failed to parse number: {text}"));
 
         self.add_token_with_literal(TokenType::Number, Some(Object::Number(value)));
     }

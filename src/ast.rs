@@ -80,24 +80,24 @@ impl AstPrinter {
                 format!("({} {} {})", operator.lexeme, self.visit(left)?, self.visit(right)?)
             }
             Expr::Grouping { expr } => format!("(group {})", self.visit(expr)?),
-            Expr::Literal { value } => format!("{}", value),
+            Expr::Literal { value } => format!("{value}"),
             Expr::Unary { operator, right } => {
                 format!("({} {})", operator.lexeme, self.visit(right)?)
             }
-            Expr::Variable { name } => format!("{}", name),
-            Expr::Assignment { name, value } => format!("{} = {}", name, self.visit(value)?),
+            Expr::Variable { name } => format!("{name}"),
+            Expr::Assignment { name, value } => format!("{name} = {}", self.visit(value)?),
             Expr::Logical { left, operator, right } => {
                 format!("({} {} {})", operator.lexeme, self.visit(left)?, self.visit(right)?)
             }
             Expr::Call { callee, paren: _, arguments } => {
-                format!("{:?}({:?})", self.visit(callee)?, arguments)
+                format!("{:?}({arguments:?})", self.visit(callee)?)
             }
-            Expr::This { keyword } => format!("{}", keyword),
-            Expr::Get { object, name } => format!("{:?}.{}", self.visit(object)?, name),
+            Expr::This { keyword } => format!("{keyword}"),
+            Expr::Get { object, name } => format!("{:?}.{name}", self.visit(object)?),
             Expr::Set { object, name, value } => {
-                format!("{:?}.{} = {:?}", self.visit(object)?, name, self.visit(value)?)
+                format!("{:?}.{name} = {:?}", self.visit(object)?, self.visit(value)?)
             }
-            Expr::Super { keyword, method } => format!("{}.{}", keyword, method),
+            Expr::Super { keyword, method } => format!("{keyword}.{method}"),
         };
         Ok(s)
     }

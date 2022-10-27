@@ -7,16 +7,13 @@ use crate::object::Object;
 use crate::token::Token;
 
 #[derive(Debug)]
+#[derive(Default)]
 pub struct Environment {
     pub enclosing: Option<Rc<RefCell<Environment>>>,
     values: HashMap<String, Object>,
 }
 
-impl Default for Environment {
-    fn default() -> Self {
-        Self { values: HashMap::new(), enclosing: None }
-    }
-}
+
 
 impl Environment {
     pub fn new() -> Self {
@@ -65,7 +62,7 @@ impl Environment {
         match self.ancestor(distance) {
             None => Err(RuntimeError::UndefinedVariable {
                 name: name.clone(),
-                msg: format!("No enclosing environment at {} for '{}'", distance, name.lexeme),
+                msg: format!("No enclosing environment at {distance} for '{}'", name.lexeme),
             }),
             Some(ancestor) => ancestor.borrow_mut().assign(name, value),
         }
@@ -93,7 +90,7 @@ impl Environment {
         match self.ancestor(distance) {
             None => Err(RuntimeError::UndefinedVariable {
                 name: name.clone(),
-                msg: format!("No enclosing environment at {} for '{}'", distance, name.lexeme),
+                msg: format!("No enclosing environment at {distance} for '{}'", name.lexeme),
             }),
             Some(ancestor) => ancestor.borrow().get(name),
         }

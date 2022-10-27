@@ -17,11 +17,11 @@ fn main() {
     let out_dir = env::var_os("OUT_DIR").unwrap();
     let dest_path = Path::new(&out_dir).join("test_files.rs");
 
-    let file = fs::File::create(&dest_path).unwrap();
+    let file = fs::File::create(dest_path).unwrap();
     let mut buf = BufWriter::new(file);
 
     println!("cargo:rerun-if-changed=build.rs");
-    println!("cargo:rerun-if-changed={}", TEST_DATA);
+    println!("cargo:rerun-if-changed={TEST_DATA}");
 
     for entry in get_all_files() {
         let filename = entry.path().to_str().unwrap();
@@ -38,7 +38,7 @@ fn main() {
         let test_case =
             TEST_TEMPLATE.replace("{test_name}", &test_name).replace("{filename}", filename);
 
-        write!(&mut buf, "{}", test_case).unwrap();
+        write!(&mut buf, "{test_case}").unwrap();
     }
 }
 

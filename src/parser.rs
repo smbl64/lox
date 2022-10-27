@@ -78,9 +78,9 @@ impl Parser {
     }
 
     fn function(&mut self, kind: &str) -> Option<Stmt> {
-        let name = self.consume(TokenType::Identifier, format!("Expect {} name", kind).as_str())?;
+        let name = self.consume(TokenType::Identifier, format!("Expect {kind} name").as_str())?;
 
-        self.consume(TokenType::LeftParen, format!("Expect '(' after {} name", kind).as_str())?;
+        self.consume(TokenType::LeftParen, format!("Expect '(' after {kind} name").as_str())?;
 
         let mut parameters = vec![];
         if !self.check(&TokenType::RightParen) {
@@ -97,7 +97,7 @@ impl Parser {
         }
 
         self.consume(TokenType::RightParen, "Expect ')' after parameters")?;
-        self.consume(TokenType::LeftBrace, format!("Expect '{{' before {} body", kind).as_str())?;
+        self.consume(TokenType::LeftBrace, format!("Expect '{{' before {kind} body").as_str())?;
 
         let body = self.block()?.into_iter().map(Rc::new).collect::<Vec<_>>();
 

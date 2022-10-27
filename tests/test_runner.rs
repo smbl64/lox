@@ -22,7 +22,7 @@ fn do_test(filename: &Path) {
     let stderr = String::from_utf8(output.stderr).unwrap();
     let stderr = stderr.trim_end();
 
-    assert_eq!(expected, stdout, "Expected != stdout\n  stdout={}\n  stderr={}\n", stdout, stderr);
+    assert_eq!(expected, stdout, "Expected != stdout\n  stdout={stdout}\n  stderr={stderr}\n");
 }
 
 fn run_file(filename: &Path) -> Output {

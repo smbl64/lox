@@ -101,12 +101,12 @@ impl ErrorReporter {
     }
 
     pub fn report(&mut self, line: i32, location: &str, message: &str) {
-        eprintln!("[line {}] Error {}: {}", line, location, message);
+        eprintln!("[line {line}] Error {location}: {message}");
         self.had_error = true;
     }
 
     pub fn runtime_error(&mut self, e: &RuntimeError) {
-        eprintln!("{}", e);
+        eprintln!("{e}");
         self.had_runtime_error = true;
     }
 }

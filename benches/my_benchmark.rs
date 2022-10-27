@@ -12,13 +12,13 @@ fn fibonacci() {
     "#;
 
     let mut lox = Lox::new();
-    lox.run(&src).unwrap();
+    lox.run(src).unwrap();
 }
 
 fn criterion_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("my-benchmark");
     group.sample_size(20);
-    group.bench_function("fib 25", |b| b.iter(|| fibonacci()));
+    group.bench_function("fib 25", |b| b.iter(fibonacci));
     group.finish();
 }
 

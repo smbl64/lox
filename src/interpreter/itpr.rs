@@ -204,7 +204,7 @@ impl Interpreter {
                 if let (Some(l), Some(r)) = (left_value.number(), right_value.number()) {
                     Ok(Object::Number(l + r))
                 } else if let (Some(l), Some(r)) = (left_value.string(), right_value.string()) {
-                    Ok(Object::String(format!("{}{}", l, r)))
+                    Ok(Object::String(format!("{l}{r}")))
                 } else {
                     Err(RuntimeError::InvalidOperand {
                         operator: operator.clone(),
@@ -401,7 +401,7 @@ impl Interpreter {
             Stmt::Print { exprs } => {
                 for expr in exprs {
                     let value = self.evaluate_expr(expr)?;
-                    print!("{}", value);
+                    print!("{value}");
                 }
 
                 println!();
