@@ -34,6 +34,9 @@ use std::rc::Rc;
 
 use prelude::{Interpreter, Parser, Resolver, RuntimeError};
 
+type Shared<T> = Rc<RefCell<T>>;
+type SharedErrorReporter = Shared<ErrorReporter>;
+
 pub struct Lox {
     interpreter: Interpreter,
     error_reporter: SharedErrorReporter,
@@ -121,5 +124,3 @@ impl ErrorReporter {
         self.had_runtime_error = true;
     }
 }
-
-type SharedErrorReporter = Rc<RefCell<ErrorReporter>>;
