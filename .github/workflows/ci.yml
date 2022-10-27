@@ -47,7 +47,23 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        toolchain: [stable, beta]
+
     steps:
-    - uses: actions/checkout@v3
-    - name: Run tests
-      run: cargo test --verbose
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install ${{ matrix.toolchain }} toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal # Skip installing rust-docs
+          toolchain: ${{ matrix.toolchain }}
+          override: true # Use this toolchain in subsequent cargo commands
+
+      - name: Run tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
