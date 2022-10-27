@@ -21,11 +21,7 @@ impl Class {
         methods: HashMap<String, Rc<LoxFunction>>,
         superclass: Option<Rc<RefCell<Self>>>,
     ) -> Self {
-        Self {
-            name: name.as_ref().to_owned(),
-            methods,
-            superclass,
-        }
+        Self { name: name.as_ref().to_owned(), methods, superclass }
     }
 }
 
@@ -44,9 +40,7 @@ impl Class {
         let instance = Rc::new(RefCell::new(Instance::new(class.clone())));
 
         if let Some(initializer) = class.borrow().find_method("init") {
-            initializer
-                .bind(Object::Instance(instance.clone()))
-                .call(interpreter, arguments)?;
+            initializer.bind(Object::Instance(instance.clone())).call(interpreter, arguments)?;
         }
 
         Ok(instance)
@@ -65,11 +59,7 @@ impl Class {
     }
 
     pub fn arity(&self) -> usize {
-        if let Some(initializer) = self.find_method("init") {
-            initializer.arity()
-        } else {
-            0
-        }
+        if let Some(initializer) = self.find_method("init") { initializer.arity() } else { 0 }
     }
 }
 
@@ -81,10 +71,7 @@ pub struct Instance {
 
 impl Instance {
     pub fn new(class: Rc<RefCell<Class>>) -> Self {
-        Self {
-            class,
-            fields: HashMap::new(),
-        }
+        Self { class, fields: HashMap::new() }
     }
 
     pub fn get(&self, field: &Token, instance: &Object) -> Result<Object, RuntimeError> {

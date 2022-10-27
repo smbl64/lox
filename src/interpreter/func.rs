@@ -1,4 +1,6 @@
-use std::{cell::RefCell, fmt::Display, rc::Rc};
+use std::cell::RefCell;
+use std::fmt::Display;
+use std::rc::Rc;
 
 use crate::prelude::*;
 
@@ -19,19 +21,11 @@ impl LoxFunction {
         closure: Rc<RefCell<Environment>>,
         is_initializer: bool,
     ) -> Self {
-        Self {
-            name,
-            params,
-            body: body.to_vec(),
-            closure,
-            is_initializer,
-        }
+        Self { name, params, body: body.to_vec(), closure, is_initializer }
     }
 
     pub fn bind(&self, instance: Object) -> Rc<LoxFunction> {
-        let env = Environment::new()
-            .with_enclosing(self.closure.clone())
-            .as_rc();
+        let env = Environment::new().with_enclosing(self.closure.clone()).as_rc();
         env.borrow_mut().define("this", instance);
 
         Rc::new(LoxFunction::new(
@@ -54,9 +48,7 @@ impl Callable for LoxFunction {
         interpret: &mut Interpreter,
         arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        let environment = Environment::new()
-            .with_enclosing(self.closure.clone())
-            .as_rc();
+        let environment = Environment::new().with_enclosing(self.closure.clone()).as_rc();
 
         {
             let mut env_borrow = environment.borrow_mut();
@@ -67,7 +59,8 @@ impl Callable for LoxFunction {
 
         let res = interpret.execute_block(&self.body, environment);
 
-        // If this is an initializer and we didn't get an error, return "this" as the return value
+        // If this is an initializer and we didn't get an error, return "this" as the
+        // return value
         if self.is_initializer
             && (matches!(res, Ok(_))
                 || matches!(res, Err(RuntimeError::Return { token: _, value: _ })))

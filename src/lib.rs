@@ -17,7 +17,9 @@ pub mod prelude {
     pub use crate::token::*;
 }
 
-use std::{cell::RefCell, io::Write, rc::Rc};
+use std::cell::RefCell;
+use std::io::Write;
+use std::rc::Rc;
 
 use prelude::{Interpreter, Parser, Resolver, RuntimeError};
 

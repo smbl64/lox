@@ -1,9 +1,10 @@
+use std::cell::RefCell;
+use std::collections::HashMap;
 use std::rc::Rc;
-use std::{cell::RefCell, collections::HashMap};
-
-use crate::{prelude::*, SharedErrorReporter};
 
 use super::func::LoxFunction;
+use crate::prelude::*;
+use crate::SharedErrorReporter;
 
 type InterpreterResult = Result<Object, RuntimeError>;
 
@@ -19,23 +20,13 @@ impl Interpreter {
         let globals = Environment::new().as_rc();
         let environment = globals.clone();
 
-        globals
-            .borrow_mut()
-            .define("clock", Object::Callable(super::native::clock()));
+        globals.borrow_mut().define("clock", Object::Callable(super::native::clock()));
 
-        Self {
-            globals,
-            environment,
-            locals: HashMap::new(),
-            error_reporter: None,
-        }
+        Self { globals, environment, locals: HashMap::new(), error_reporter: None }
     }
 
     pub fn with_error_reporting(self, error_reporter: SharedErrorReporter) -> Self {
-        Self {
-            error_reporter: Some(error_reporter),
-            ..self
-        }
+        Self { error_reporter: Some(error_reporter), ..self }
     }
 }
 
@@ -45,19 +36,13 @@ impl Interpreter {
             Expr::Literal { value } => Ok(value.clone()),
             Expr::Grouping { expr: inner } => self.evaluate_expr(inner.as_ref()),
             Expr::Unary { operator, right } => self.evaluate_unary(operator, right),
-            Expr::Binary {
-                left,
-                operator,
-                right,
-            } => self.evaluate_binary(left, operator, right),
+            Expr::Binary { left, operator, right } => self.evaluate_binary(left, operator, right),
             Expr::Variable { name } => self.lookup_variable(name, expr),
             Expr::Assignment { name, value } => {
                 let value = self.evaluate_expr(value.as_ref())?;
 
                 if let Some(&distance) = self.locals.get(&expr.unique_id()) {
-                    self.environment
-                        .borrow_mut()
-                        .assign_at(distance, name, value.clone())?;
+                    self.environment.borrow_mut().assign_at(distance, name, value.clone())?;
                 } else {
                     self.globals.borrow_mut().assign(name, value.clone())?;
                 }
@@ -75,11 +60,7 @@ impl Interpreter {
                     })
                 }
             }
-            Expr::Set {
-                object,
-                name,
-                value,
-            } => {
+            Expr::Set { object, name, value } => {
                 let value = self.evaluate_expr(value)?;
                 let object = self.evaluate_expr(object)?;
 
@@ -93,14 +74,8 @@ impl Interpreter {
                     })
                 }
             }
-            Expr::Super {
-                keyword,
-                method: method_name,
-            } => {
-                let distance = *self
-                    .locals
-                    .get(&expr.unique_id())
-                    .expect("Cannot find distance");
+            Expr::Super { keyword, method: method_name } => {
+                let distance = *self.locals.get(&expr.unique_id()).expect("Cannot find distance");
 
                 let superclass = self.environment.borrow().get_at(distance, keyword)?;
                 let superclass = match superclass {
@@ -123,11 +98,7 @@ impl Interpreter {
                 }
             }
             Expr::This { keyword } => self.lookup_variable(keyword, expr),
-            Expr::Logical {
-                left,
-                operator,
-                right,
-            } => {
+            Expr::Logical { left, operator, right } => {
                 let left_val = self.evaluate_expr(left)?;
 
                 if operator.token_type == TokenType::Or {
@@ -143,11 +114,7 @@ impl Interpreter {
 
                 self.evaluate_expr(right)
             }
-            Expr::Call {
-                callee,
-                paren,
-                arguments,
-            } => {
+            Expr::Call { callee, paren, arguments } => {
                 let callee = self.evaluate_expr(callee)?;
                 match callee {
                     Object::Callable(callable) => {
@@ -346,11 +313,7 @@ impl Interpreter {
             Stmt::Expression { expr } => {
                 self.evaluate_expr(expr)?;
             }
-            Stmt::Class {
-                name,
-                methods,
-                superclass,
-            } => {
+            Stmt::Class { name, methods, superclass } => {
                 // TODO: this looks really ugly!!
                 let superclass = if let Some(s) = superclass {
                     let obj = self.evaluate_expr(s)?;
@@ -371,14 +334,11 @@ impl Interpreter {
                     None
                 };
 
-                self.environment
-                    .borrow_mut()
-                    .define(&name.lexeme, Object::Null);
+                self.environment.borrow_mut().define(&name.lexeme, Object::Null);
 
                 if let Some(ref superclass) = superclass {
-                    self.environment = Environment::new()
-                        .with_enclosing(self.environment.clone())
-                        .as_rc();
+                    self.environment =
+                        Environment::new().with_enclosing(self.environment.clone()).as_rc();
 
                     self.environment
                         .borrow_mut()
@@ -417,37 +377,26 @@ impl Interpreter {
                     self.environment = enclosing;
                 }
 
-                self.environment
-                    .borrow_mut()
-                    .assign(name, Object::Class(class))?;
+                self.environment.borrow_mut().assign(name, Object::Class(class))?;
             }
             Stmt::Function { name, params, body } => {
                 // self.environment is the current active environment when function
                 // is being declared, NOT when it's being called!
                 // In other words, this is the enclosing environment in which the function is
-                // declarad. For inner functions, it refers to their parent function's environment.
+                // declarad. For inner functions, it refers to their parent function's
+                // environment.
                 let env = self.environment.clone();
                 let function = LoxFunction::new(name.clone(), params.to_vec(), body, env, false);
                 self.environment
                     .borrow_mut()
                     .define(&name.lexeme, Object::Callable(Rc::new(function)));
             }
-            Stmt::Break { token } => {
-                return Err(RuntimeError::Break {
-                    token: token.clone(),
-                })
-            }
+            Stmt::Break { token } => return Err(RuntimeError::Break { token: token.clone() }),
             Stmt::Return { keyword, value } => {
-                let value = if let Some(expr) = value {
-                    self.evaluate_expr(expr)?
-                } else {
-                    Object::Null
-                };
+                let value =
+                    if let Some(expr) = value { self.evaluate_expr(expr)? } else { Object::Null };
 
-                return Err(RuntimeError::Return {
-                    token: keyword.clone(),
-                    value,
-                });
+                return Err(RuntimeError::Return { token: keyword.clone(), value });
             }
             Stmt::Print { exprs } => {
                 for expr in exprs {
@@ -468,17 +417,11 @@ impl Interpreter {
             }
             Stmt::Block { statements } => {
                 // Create a new environment for executing the block
-                let new_env = Environment::new()
-                    .with_enclosing(self.environment.clone())
-                    .as_rc();
+                let new_env = Environment::new().with_enclosing(self.environment.clone()).as_rc();
 
                 self.execute_block(statements, new_env)?;
             }
-            Stmt::If {
-                condition,
-                then_branch,
-                else_branch,
-            } => {
+            Stmt::If { condition, then_branch, else_branch } => {
                 let condition_result = self.evaluate_expr(condition)?;
 
                 if self.is_truthy(&condition_result) {

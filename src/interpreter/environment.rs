@@ -1,4 +1,6 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::rc::Rc;
 
 use super::RuntimeError;
 use crate::object::Object;
@@ -12,10 +14,7 @@ pub struct Environment {
 
 impl Default for Environment {
     fn default() -> Self {
-        Self {
-            values: HashMap::new(),
-            enclosing: None,
-        }
+        Self { values: HashMap::new(), enclosing: None }
     }
 }
 
@@ -25,10 +24,7 @@ impl Environment {
     }
 
     pub fn with_enclosing(self, enclosing: Rc<RefCell<Environment>>) -> Self {
-        Self {
-            enclosing: Some(enclosing),
-            ..Default::default()
-        }
+        Self { enclosing: Some(enclosing), ..Default::default() }
     }
 
     pub fn as_rc(self) -> Rc<RefCell<Self>> {
@@ -69,10 +65,7 @@ impl Environment {
         match self.ancestor(distance) {
             None => Err(RuntimeError::UndefinedVariable {
                 name: name.clone(),
-                msg: format!(
-                    "No enclosing environment at {} for '{}'",
-                    distance, name.lexeme
-                ),
+                msg: format!("No enclosing environment at {} for '{}'", distance, name.lexeme),
             }),
             Some(ancestor) => ancestor.borrow_mut().assign(name, value),
         }
@@ -100,10 +93,7 @@ impl Environment {
         match self.ancestor(distance) {
             None => Err(RuntimeError::UndefinedVariable {
                 name: name.clone(),
-                msg: format!(
-                    "No enclosing environment at {} for '{}'",
-                    distance, name.lexeme
-                ),
+                msg: format!("No enclosing environment at {} for '{}'", distance, name.lexeme),
             }),
             Some(ancestor) => ancestor.borrow().get(name),
         }

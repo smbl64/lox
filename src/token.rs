@@ -1,5 +1,6 @@
-use crate::prelude::*;
 use std::fmt::{Debug, Display};
+
+use crate::prelude::*;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -73,21 +74,12 @@ pub struct Token {
 
 impl Token {
     pub fn new(token_type: TokenType, lexeme: &str, literal: Option<Object>, line: i32) -> Self {
-        Self {
-            token_type,
-            lexeme: lexeme.to_owned(),
-            literal,
-            line,
-        }
+        Self { token_type, lexeme: lexeme.to_owned(), literal, line }
     }
 }
 
 impl Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{:?} {} {:?}",
-            self.token_type, self.lexeme, self.literal
-        )
+        write!(f, "{:?} {} {:?}", self.token_type, self.lexeme, self.literal)
     }
 }

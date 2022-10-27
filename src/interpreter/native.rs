@@ -1,10 +1,9 @@
-use crate::{object::Object, token::Callable};
+use std::fmt::Display;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use super::*;
-use std::{
-    fmt::Display,
-    time::{SystemTime, UNIX_EPOCH},
-};
+use crate::object::Object;
+use crate::token::Callable;
 
 #[derive(Debug)]
 struct Clock;
@@ -20,9 +19,7 @@ impl Callable for Clock {
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
         let start = SystemTime::now();
-        let since_epoch = start
-            .duration_since(UNIX_EPOCH)
-            .expect("Time went backward");
+        let since_epoch = start.duration_since(UNIX_EPOCH).expect("Time went backward");
 
         Ok(Object::Number(since_epoch.as_millis() as f64 / 1000.0))
     }

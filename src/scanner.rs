@@ -1,4 +1,5 @@
-use crate::{prelude::*, SharedErrorReporter};
+use crate::prelude::*;
+use crate::SharedErrorReporter;
 
 #[derive(Debug)]
 pub struct Scanner {
@@ -23,10 +24,7 @@ impl Scanner {
     }
 
     pub fn with_error_reporting(self, error_reporter: SharedErrorReporter) -> Self {
-        Self {
-            error_reporter: Some(error_reporter),
-            ..self
-        }
+        Self { error_reporter: Some(error_reporter), ..self }
     }
 
     pub fn scan_tokens(&mut self) -> Vec<Token> {
@@ -35,8 +33,7 @@ impl Scanner {
             self.scan_token();
         }
 
-        self.tokens
-            .push(Token::new(TokenType::EOF, "", None, self.line));
+        self.tokens.push(Token::new(TokenType::EOF, "", None, self.line));
 
         // Take our temporary tokens out. It will be replaced by the default()
         // value for the vector
@@ -62,35 +59,23 @@ impl Scanner {
             ';' => self.add_token(TokenType::Semicolon),
             '*' => self.add_token(TokenType::Star),
             '!' => {
-                let token_type = if self.match_next('=') {
-                    TokenType::BangEqual
-                } else {
-                    TokenType::Bang
-                };
+                let token_type =
+                    if self.match_next('=') { TokenType::BangEqual } else { TokenType::Bang };
                 self.add_token(token_type);
             }
             '=' => {
-                let token_type = if self.match_next('=') {
-                    TokenType::EqualEqual
-                } else {
-                    TokenType::Equal
-                };
+                let token_type =
+                    if self.match_next('=') { TokenType::EqualEqual } else { TokenType::Equal };
                 self.add_token(token_type);
             }
             '<' => {
-                let token_type = if self.match_next('=') {
-                    TokenType::LessEqual
-                } else {
-                    TokenType::Less
-                };
+                let token_type =
+                    if self.match_next('=') { TokenType::LessEqual } else { TokenType::Less };
                 self.add_token(token_type);
             }
             '>' => {
-                let token_type = if self.match_next('=') {
-                    TokenType::GreaterEqual
-                } else {
-                    TokenType::Greater
-                };
+                let token_type =
+                    if self.match_next('=') { TokenType::GreaterEqual } else { TokenType::Greater };
                 self.add_token(token_type);
             }
             '/' => {
@@ -209,9 +194,8 @@ impl Scanner {
         }
 
         let text = self.source_substring(self.start, self.current);
-        let value = text
-            .parse::<f64>()
-            .unwrap_or_else(|_| panic!("failed to parse number: {}", text));
+        let value =
+            text.parse::<f64>().unwrap_or_else(|_| panic!("failed to parse number: {}", text));
 
         self.add_token_with_literal(TokenType::Number, Some(Object::Number(value)));
     }

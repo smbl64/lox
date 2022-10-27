@@ -1,7 +1,8 @@
-use crate::object::Object;
-use crate::token::Token;
 use std::error::Error;
 use std::fmt::Display;
+
+use crate::object::Object;
+use crate::token::Token;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum RuntimeError {
@@ -42,10 +43,7 @@ pub struct ResolverError {
 
 impl ResolverError {
     pub fn new<T>(token: Option<Token>, msg: impl AsRef<str>) -> Result<T, Self> {
-        Err(Self {
-            token,
-            msg: msg.as_ref().to_owned(),
-        })
+        Err(Self { token, msg: msg.as_ref().to_owned() })
     }
 }
 

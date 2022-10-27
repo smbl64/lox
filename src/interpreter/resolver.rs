@@ -1,11 +1,9 @@
 use std::collections::HashMap;
 
-use crate::{
-    prelude::{Expr, Stmt},
-    token::Token,
-};
-
-use super::{error::ResolverError, Interpreter};
+use super::error::ResolverError;
+use super::Interpreter;
+use crate::prelude::{Expr, Stmt};
+use crate::token::Token;
 
 #[derive(Debug, Clone, PartialEq, Copy)]
 enum FunctionType {
@@ -22,7 +20,8 @@ enum ClassType {
     SubClass,
 }
 
-/// Resolver uses static analysis to bind local variables to the correct envorinment.
+/// Resolver uses static analysis to bind local variables to the correct
+/// envorinment.
 pub struct Resolver<'i> {
     interpreter: &'i mut Interpreter,
     scopes: Vec<HashMap<String, bool>>,
@@ -61,11 +60,7 @@ impl<'a> Resolver<'a> {
                 self.define(name);
                 Ok(())
             }
-            Stmt::Class {
-                name,
-                methods,
-                superclass,
-            } => {
+            Stmt::Class { name, methods, superclass } => {
                 let enclosing_class = self.current_class;
                 self.current_class = ClassType::Class;
 
@@ -92,24 +87,16 @@ impl<'a> Resolver<'a> {
                 if superclass.is_some() {
                     self.begin_scope();
                     // Safe to unwrap, because we're calling begin_scope before it
-                    self.peek_mut_scope()
-                        .unwrap()
-                        .insert("super".to_owned(), true);
+                    self.peek_mut_scope().unwrap().insert("super".to_owned(), true);
                 }
 
                 self.begin_scope();
                 // Safe to unwrap, because we're calling begin_scope before it
-                self.peek_mut_scope()
-                    .unwrap()
-                    .insert("this".to_owned(), true);
+                self.peek_mut_scope().unwrap().insert("this".to_owned(), true);
 
                 for method in methods {
                     let is_initializer = match method {
-                        Stmt::Function {
-                            name,
-                            params: _,
-                            body: _,
-                        } => name.lexeme == "init",
+                        Stmt::Function { name, params: _, body: _ } => name.lexeme == "init",
                         _ => {
                             // This should not happen if the parser
                             // does its job properly!
@@ -135,11 +122,7 @@ impl<'a> Resolver<'a> {
                 self.current_class = enclosing_class;
                 Ok(())
             }
-            Stmt::Function {
-                name,
-                params: _,
-                body: _,
-            } => {
+            Stmt::Function { name, params: _, body: _ } => {
                 // Unlike variables, we declare and define functions before processing
                 // their body. This way, functions can recursively call themselves.
                 self.declare(name)?;
@@ -148,11 +131,7 @@ impl<'a> Resolver<'a> {
                 self.resolve_function(input, FunctionType::Function)
             }
             Stmt::Expression { expr } => self.resolve_expr(expr),
-            Stmt::If {
-                condition,
-                then_branch,
-                else_branch,
-            } => {
+            Stmt::If { condition, then_branch, else_branch } => {
                 self.resolve_expr(condition)?;
                 self.resolve_single_stmt(then_branch)?;
                 if let Some(stmt) = else_branch {
@@ -279,12 +258,7 @@ impl<'a> Resolver<'a> {
         stmt: &Stmt,
         func_type: FunctionType,
     ) -> Result<(), ResolverError> {
-        if let Stmt::Function {
-            name: _,
-            params,
-            body,
-        } = stmt
-        {
+        if let Stmt::Function { name: _, params, body } = stmt {
             let enclosing_func = self.current_function;
             self.current_function = func_type;
 
@@ -341,19 +315,11 @@ impl<'a> Resolver<'a> {
                     self.resolve_local(input, keyword)
                 }
             }
-            Expr::Binary {
-                left,
-                operator: _,
-                right,
-            } => {
+            Expr::Binary { left, operator: _, right } => {
                 self.resolve_expr(left)?;
                 self.resolve_expr(right)
             }
-            Expr::Call {
-                callee,
-                paren: _,
-                arguments,
-            } => {
+            Expr::Call { callee, paren: _, arguments } => {
                 self.resolve_expr(callee)?;
                 for arg in arguments {
                     self.resolve_expr(arg)?;
@@ -364,11 +330,7 @@ impl<'a> Resolver<'a> {
                 self.resolve_expr(object)?;
                 Ok(())
             }
-            Expr::Set {
-                object,
-                name: _,
-                value,
-            } => {
+            Expr::Set { object, name: _, value } => {
                 self.resolve_expr(object)?;
                 self.resolve_expr(value)?;
                 Ok(())
@@ -377,11 +339,7 @@ impl<'a> Resolver<'a> {
             Expr::Grouping { expr } => self.resolve_expr(expr),
             Expr::Literal { value: _ } => Ok(()),
             Expr::Unary { operator: _, right } => self.resolve_expr(right),
-            Expr::Logical {
-                left,
-                operator: _,
-                right,
-            } => {
+            Expr::Logical { left, operator: _, right } => {
                 self.resolve_expr(left)?;
                 self.resolve_expr(right)
             }

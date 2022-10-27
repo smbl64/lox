@@ -1,8 +1,7 @@
-use std::env;
-use std::fs;
-use std::io::BufWriter;
-use std::io::Write;
+use std::io::{BufWriter, Write};
 use std::path::Path;
+use std::{env, fs};
+
 use walkdir::WalkDir;
 
 static TEST_DATA: &str = "./tests/data/";
@@ -36,9 +35,8 @@ fn main() {
             .replace(".lox", "")
             .replace("tests_data_", "");
 
-        let test_case = TEST_TEMPLATE
-            .replace("{test_name}", &test_name)
-            .replace("{filename}", filename);
+        let test_case =
+            TEST_TEMPLATE.replace("{test_name}", &test_name).replace("{filename}", filename);
 
         write!(&mut buf, "{}", test_case).unwrap();
     }

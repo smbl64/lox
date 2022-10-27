@@ -1,5 +1,6 @@
-use lox::Lox;
 use std::env;
+
+use lox::Lox;
 
 fn main() -> Result<(), anyhow::Error> {
     let mut args = env::args().into_iter().skip(1).collect::<Vec<_>>();
