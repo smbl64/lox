@@ -1,4 +1,4 @@
-name: Tests
+name: Checks
 
 on:
   push:
@@ -20,6 +20,31 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install latest nightly toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal # Skip installing rust-docs
+          toolchain: nightly
+          override: true # Use nightly in subsequent cargo commands
+          components: rustfmt, clippy
+
+      - name: Check formatting (rustfmt)
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --check
+
+      - name: Check clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+
   test:
     runs-on: ubuntu-latest
     steps:
