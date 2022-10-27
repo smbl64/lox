@@ -77,7 +77,12 @@ impl AstPrinter {
     pub fn to_string(expr: &Expr) -> String {
         match expr {
             Expr::Binary { left, operator, right } => {
-                format!("({} {} {})", operator.lexeme, Self::to_string(left), Self::to_string(right))
+                format!(
+                    "({} {} {})",
+                    operator.lexeme,
+                    Self::to_string(left),
+                    Self::to_string(right)
+                )
             }
             Expr::Grouping { expr } => format!("(group {})", Self::to_string(expr)),
             Expr::Literal { value } => format!("{value}"),
@@ -87,7 +92,12 @@ impl AstPrinter {
             Expr::Variable { name } => format!("{name}"),
             Expr::Assignment { name, value } => format!("{name} = {}", Self::to_string(value)),
             Expr::Logical { left, operator, right } => {
-                format!("({} {} {})", operator.lexeme, Self::to_string(left), Self::to_string(right))
+                format!(
+                    "({} {} {})",
+                    operator.lexeme,
+                    Self::to_string(left),
+                    Self::to_string(right)
+                )
             }
             Expr::Call { callee, paren: _, arguments } => {
                 format!("{:?}({arguments:?})", Self::to_string(callee))

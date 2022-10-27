@@ -6,14 +6,11 @@ use super::RuntimeError;
 use crate::object::Object;
 use crate::token::Token;
 
-#[derive(Debug)]
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct Environment {
     pub enclosing: Option<Rc<RefCell<Environment>>>,
     values: HashMap<String, Object>,
 }
-
-
 
 impl Environment {
     pub fn new() -> Self {
