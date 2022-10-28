@@ -19,7 +19,7 @@ pub mod prelude {
     pub use crate::class::*;
     pub use crate::environment::Environment;
     pub use crate::error::*;
-    pub use crate::func::LoxFunction;
+    pub use crate::func::*;
     pub use crate::interpreter::*;
     pub use crate::object::*;
     pub use crate::parser::*;

@@ -1,8 +1,17 @@
 use std::cell::RefCell;
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 use std::rc::Rc;
 
 use crate::prelude::*;
+
+pub trait Callable: Debug + Display {
+    fn arity(&self) -> usize;
+    fn call(
+        &self,
+        interpret: &mut Interpreter,
+        arguments: Vec<Object>,
+    ) -> Result<Object, RuntimeError>;
+}
 
 #[derive(Debug, Clone)]
 pub struct LoxFunction {

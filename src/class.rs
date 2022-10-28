@@ -3,10 +3,7 @@ use std::collections::HashMap;
 use std::fmt::Display;
 use std::rc::Rc;
 
-use crate::interpreter::Interpreter;
-use crate::object::Object;
-use crate::prelude::{LoxFunction, RuntimeError, UniqueId};
-use crate::token::{Callable, Token};
+use crate::prelude::*;
 
 #[derive(Debug, Clone)]
 pub struct Class {

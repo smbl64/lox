@@ -3,7 +3,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use super::*;
 use crate::object::Object;
-use crate::token::Callable;
+use crate::prelude::Callable;
 
 #[derive(Debug)]
 struct Clock;

@@ -55,14 +55,6 @@ pub enum TokenType {
     EOF,
 }
 
-pub trait Callable: Debug + Display {
-    fn arity(&self) -> usize;
-    fn call(
-        &self,
-        interpret: &mut Interpreter,
-        arguments: Vec<Object>,
-    ) -> Result<Object, RuntimeError>;
-}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Token {
