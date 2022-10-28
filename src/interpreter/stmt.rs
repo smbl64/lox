@@ -61,12 +61,12 @@ impl Interpreter {
                     .borrow_mut()
                     .define(&name.lexeme, Object::Callable(Rc::new(function)));
             }
-            Stmt::Break { token } => return Err(RuntimeError::Break { token: token.clone() }),
+            Stmt::Break { token } => return Err(RuntimeError::Break { line: token.line }),
             Stmt::Return { keyword, value } => {
                 let value =
                     if let Some(expr) = value { self.evaluate_expr(expr)? } else { Object::Null };
 
-                return Err(RuntimeError::Return { token: keyword.clone(), value });
+                return Err(RuntimeError::Return { line: keyword.line, value });
             }
             Stmt::Print { exprs } => {
                 for expr in exprs {
@@ -120,7 +120,7 @@ impl Interpreter {
                 _ => {
                     if let Expr::Variable { name: super_name } = s {
                         return Err(RuntimeError::Generic {
-                            name: super_name.clone(),
+                            line: super_name.line,
                             msg: "Superclass must be a class".to_owned(),
                         });
                     } else {

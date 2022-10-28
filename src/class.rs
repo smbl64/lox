@@ -79,8 +79,8 @@ impl Instance {
 
             Ok(Object::Callable(function))
         } else {
-            Err(RuntimeError::UndefinedVariable {
-                name: field.clone(),
+            Err(RuntimeError::Generic {
+                line: field.line,
                 msg: format!("Undefined property '{}'", field.lexeme),
             })
         }

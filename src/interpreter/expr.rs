@@ -25,8 +25,8 @@ impl Interpreter {
                 if let Object::Instance(ref instance) = object {
                     instance.borrow().get(name, &object)
                 } else {
-                    Err(RuntimeError::InvalidOperand {
-                        operator: name.clone(),
+                    Err(RuntimeError::Generic {
+                        line: name.line,
                         msg: "Only instances have properties".to_owned(),
                     })
                 }
@@ -39,8 +39,8 @@ impl Interpreter {
                     instance.borrow_mut().set(name, value.clone());
                     Ok(value)
                 } else {
-                    Err(RuntimeError::InvalidOperand {
-                        operator: name.clone(),
+                    Err(RuntimeError::Generic {
+                        line: name.line,
                         msg: "Only instances have properties".to_owned(),
                     })
                 }
@@ -62,8 +62,8 @@ impl Interpreter {
                 if let Some(method) = method {
                     Ok(Object::Callable(method.bind(instance)))
                 } else {
-                    Err(RuntimeError::UndefinedVariable {
-                        name: method_name.clone(),
+                    Err(RuntimeError::Generic {
+                        line: method_name.line,
                         msg: format!("Undefined property '{}'", method_name.lexeme),
                     })
                 }
@@ -90,8 +90,8 @@ impl Interpreter {
                 match callee {
                     Object::Callable(callable) => {
                         if callable.arity() != arguments.len() {
-                            return Err(RuntimeError::InvalidOperand {
-                                operator: paren.clone(),
+                            return Err(RuntimeError::Generic {
+                                line: paren.line,
                                 msg: format!(
                                     "Expected {} arguments, got {}",
                                     callable.arity(),
@@ -110,8 +110,8 @@ impl Interpreter {
                     Object::Class(class) => {
                         let arity = class.borrow().arity();
                         if arity != arguments.len() {
-                            return Err(RuntimeError::InvalidOperand {
-                                operator: paren.clone(),
+                            return Err(RuntimeError::Generic {
+                                line: paren.line,
                                 msg: format!(
                                     "Expected {} arguments, got {}",
                                     arity,
@@ -128,8 +128,8 @@ impl Interpreter {
 
                         Class::construct(class, args, self).map(Object::Instance)
                     }
-                    _ => Err(RuntimeError::InvalidOperand {
-                        operator: paren.clone(),
+                    _ => Err(RuntimeError::Generic {
+                        line: paren.line,
                         msg: "Can only call functions and classes".to_owned(),
                     }),
                 }
@@ -148,8 +148,8 @@ impl Interpreter {
                 if let Object::Number(n) = value {
                     Ok(Object::Number(-n))
                 } else {
-                    Err(RuntimeError::InvalidOperand {
-                        operator: operator.clone(),
+                    Err(RuntimeError::Generic {
+                        line: operator.line,
                         msg: "Operand must be a number".to_owned(),
                     })
                 }
@@ -177,8 +177,8 @@ impl Interpreter {
                 } else if let (Some(l), Some(r)) = (left_value.string(), right_value.string()) {
                     Ok(Object::String(format!("{l}{r}")))
                 } else {
-                    Err(RuntimeError::InvalidOperand {
-                        operator: operator.clone(),
+                    Err(RuntimeError::Generic {
+                        line: operator.line,
                         msg: "Operands must be two numbers or two strings".to_owned(),
                     })
                 }
@@ -222,8 +222,8 @@ impl Interpreter {
         if let (Some(l), Some(r)) = (left.number(), right.number()) {
             Ok((l, r))
         } else {
-            Err(RuntimeError::InvalidOperand {
-                operator: operator.clone(),
+            Err(RuntimeError::Generic {
+                line: operator.line,
                 msg: "Operands must be numbers".to_owned(),
             })
         }
