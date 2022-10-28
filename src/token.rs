@@ -1,7 +1,5 @@
 use std::fmt::{Debug, Display};
 
-use crate::prelude::*;
-
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TokenType {
@@ -55,17 +53,37 @@ pub enum TokenType {
     EOF,
 }
 
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub enum Literal {
+    Null,
+    Boolean(bool),
+    Number(f64),
+    String(String),
+}
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+impl Display for Literal {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Null => write!(f, "nil"),
+            Self::Boolean(b) => write!(f, "{b}"),
+            Self::Number(n) => {
+                write!(f, "{n}")
+            }
+            Self::String(s) => write!(f, "{s}"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct Token {
     pub token_type: TokenType,
     pub lexeme: String,
-    pub literal: Option<Object>,
+    pub literal: Option<Literal>,
     pub line: i32,
 }
 
 impl Token {
-    pub fn new(token_type: TokenType, lexeme: &str, literal: Option<Object>, line: i32) -> Self {
+    pub fn new(token_type: TokenType, lexeme: &str, literal: Option<Literal>, line: i32) -> Self {
         Self { token_type, lexeme: lexeme.to_owned(), literal, line }
     }
 }

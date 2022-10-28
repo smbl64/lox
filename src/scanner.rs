@@ -121,7 +121,7 @@ impl Scanner {
         self.source_chars.get(start..end).unwrap().iter().collect()
     }
 
-    fn add_token_with_literal(&mut self, token_type: TokenType, literal_value: Option<Object>) {
+    fn add_token_with_literal(&mut self, token_type: TokenType, literal_value: Option<Literal>) {
         let text = self.source_substring(self.start, self.current);
         let token = Token::new(token_type, &text, literal_value, self.line);
         self.tokens.push(token);
@@ -176,7 +176,7 @@ impl Scanner {
 
         // Skip the quote marks
         let text = self.source_substring(self.start + 1, self.current - 1);
-        self.add_token_with_literal(TokenType::StringLiteral, Some(Object::String(text)));
+        self.add_token_with_literal(TokenType::StringLiteral, Some(Literal::String(text)));
     }
 
     fn number(&mut self) {
@@ -197,7 +197,7 @@ impl Scanner {
         let value =
             text.parse::<f64>().unwrap_or_else(|_| panic!("failed to parse number: {text}"));
 
-        self.add_token_with_literal(TokenType::Number, Some(Object::Number(value)));
+        self.add_token_with_literal(TokenType::Number, Some(Literal::Number(value)));
     }
 
     fn identifier(&mut self) {

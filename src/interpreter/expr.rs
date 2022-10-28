@@ -4,7 +4,7 @@ use crate::prelude::*;
 impl Interpreter {
     pub fn evaluate_expr(&mut self, expr: &Expr) -> InterpreterResult {
         match expr {
-            Expr::Literal { value } => Ok(value.clone()),
+            Expr::Literal { value } => Ok(value.clone().into()),
             Expr::Grouping { expr: inner } => self.evaluate_expr(inner.as_ref()),
             Expr::Unary { operator, right } => self.evaluate_unary(operator, right),
             Expr::Binary { left, operator, right } => self.evaluate_binary(left, operator, right),

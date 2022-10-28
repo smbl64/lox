@@ -15,7 +15,7 @@ pub enum Expr {
     Super { keyword: Token, method: Token },
     This { keyword: Token },
     Grouping { expr: Box<Expr> },
-    Literal { value: Object },
+    Literal { value: Literal },
     Unary { operator: Token, right: Box<Expr> },
     Variable { name: Token },
     Assignment { name: Token, value: Box<Expr> },
@@ -39,11 +39,11 @@ impl Eq for Expr {}
 
 impl Expr {
     pub fn int_literal(v: f64) -> Expr {
-        Expr::Literal { value: Object::Number(v) }
+        Expr::Literal { value: Literal::Number(v) }
     }
 
     pub fn str_literal(s: &str) -> Expr {
-        Expr::Literal { value: Object::String(s.to_owned()) }
+        Expr::Literal { value: Literal::String(s.to_owned()) }
     }
 
     pub fn unique_id(&self) -> UniqueId {

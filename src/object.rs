@@ -35,6 +35,17 @@ impl PartialEq for Object {
 
 impl Eq for Object {}
 
+impl From<Literal> for Object {
+    fn from(l: Literal) -> Self {
+        match l {
+            Literal::Null => Self::Null,
+            Literal::Number(n) => Self::Number(n),
+            Literal::Boolean(b) => Self::Boolean(b),
+            Literal::String(s) => Self::String(s),
+        }
+    }
+}
+
 impl Object {
     pub fn number(&self) -> Option<f64> {
         match self {

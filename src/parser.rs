@@ -168,7 +168,7 @@ impl Parser {
         };
 
         let condition = if self.check(&TokenType::Semicolon) {
-            Expr::Literal { value: Object::Boolean(true) }
+            Expr::Literal { value: Literal::Boolean(true) }
         } else {
             self.expression()?
         };
@@ -375,10 +375,10 @@ impl Parser {
 
     fn primary(&mut self) -> Option<Expr> {
         if self.match_tt(&[TokenType::False]) {
-            return Some(Expr::Literal { value: Object::Boolean(false) });
+            return Some(Expr::Literal { value: Literal::Boolean(false) });
         }
         if self.match_tt(&[TokenType::True]) {
-            return Some(Expr::Literal { value: Object::Boolean(true) });
+            return Some(Expr::Literal { value: Literal::Boolean(true) });
         }
 
         if self.match_tt(&[TokenType::Super]) {
@@ -389,19 +389,23 @@ impl Parser {
         }
 
         if self.match_tt(&[TokenType::Nil]) {
-            return Some(Expr::Literal { value: Object::Null });
+            return Some(Expr::Literal { value: Literal::Null });
         }
+
         if self.match_tt(&[TokenType::Number, TokenType::StringLiteral]) {
             return Some(Expr::Literal {
                 value: self.previous().literal.expect("expecting a number or string here"),
             });
         }
+
         if self.match_tt(&[TokenType::This]) {
             return Some(Expr::This { keyword: self.previous() });
         }
+
         if self.match_tt(&[TokenType::Identifier]) {
             return Some(Expr::Variable { name: self.previous() });
         }
+
         if self.match_tt(&[TokenType::LeftParen]) {
             let expr = self.expression()?;
             self.consume(TokenType::RightParen, "Expect ')' after expression.")?;

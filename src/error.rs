@@ -3,7 +3,7 @@ use std::fmt::Display;
 use crate::object::Object;
 use crate::token::Token;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq)]
 pub enum RuntimeError {
     InvalidOperand { operator: Token, msg: String },
     UndefinedVariable { name: Token, msg: String },
