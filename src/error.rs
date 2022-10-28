@@ -9,6 +9,12 @@ pub enum RuntimeError {
     Return { line: i32, value: Object },
 }
 
+impl RuntimeError {
+    pub fn generic(line: i32, msg: impl AsRef<str>) -> Self {
+        Self::Generic { line, msg: msg.as_ref().to_owned() }
+    }
+}
+
 impl Display for RuntimeError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {

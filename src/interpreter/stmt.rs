@@ -119,10 +119,10 @@ impl Interpreter {
                 Object::Class(c) => Some(c),
                 _ => {
                     if let Expr::Variable { name: super_name } = s {
-                        return Err(RuntimeError::Generic {
-                            line: super_name.line,
-                            msg: "Superclass must be a class".to_owned(),
-                        });
+                        return Err(RuntimeError::generic(
+                            super_name.line,
+                            "Superclass must be a class",
+                        ));
                     } else {
                         panic!("Superclass is not enclosed in a Expr::Variable!");
                     }
@@ -188,7 +188,7 @@ impl Interpreter {
             // statement. Any other error will be propagated up.
             let result = self.execute(body);
 
-            if matches!(result, Err(RuntimeError::Break { token: _ })) {
+            if matches!(result, Err(RuntimeError::Break { .. })) {
                 break;
             }
 

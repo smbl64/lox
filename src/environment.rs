@@ -36,10 +36,10 @@ impl Environment {
                 return e.borrow_mut().assign(name, value);
             }
 
-            return Err(RuntimeError::Generic {
-                line: name.line,
-                msg: format!("Undefined variable '{}'", name.lexeme),
-            });
+            return Err(RuntimeError::generic(
+                name.line,
+                format!("Undefined variable '{}'", name.lexeme),
+            ));
         }
 
         self.values.insert(name.lexeme.clone(), value);
@@ -57,10 +57,10 @@ impl Environment {
         }
 
         match self.ancestor(distance) {
-            None => Err(RuntimeError::Generic {
-                line: name.line,
-                msg: format!("No enclosing environment at {distance} for '{}'", name.lexeme),
-            }),
+            None => Err(RuntimeError::generic(
+                name.line,
+                format!("No enclosing environment at {distance} for '{}'", name.lexeme),
+            )),
             Some(ancestor) => ancestor.borrow_mut().assign(name, value),
         }
     }
@@ -73,9 +73,8 @@ impl Environment {
             return rc.borrow_mut().get(name);
         }
 
-        value.ok_or_else(move || RuntimeError::Generic {
-            line: name.line,
-            msg: format!("Undefined variable '{}'", name.lexeme),
+        value.ok_or_else(|| {
+            RuntimeError::generic(name.line, format!("Undefined variable '{}'", name.lexeme))
         })
     }
 
@@ -85,10 +84,10 @@ impl Environment {
         }
 
         match self.ancestor(distance) {
-            None => Err(RuntimeError::Generic {
-                line: name.line,
-                msg: format!("No enclosing environment at {distance} for '{}'", name.lexeme),
-            }),
+            None => Err(RuntimeError::generic(
+                name.line,
+                format!("No enclosing environment at {distance} for '{}'", name.lexeme),
+            )),
             Some(ancestor) => ancestor.borrow().get(name),
         }
     }

@@ -25,10 +25,7 @@ impl Interpreter {
                 if let Object::Instance(ref instance) = object {
                     instance.borrow().get(name, &object)
                 } else {
-                    Err(RuntimeError::Generic {
-                        line: name.line,
-                        msg: "Only instances have properties".to_owned(),
-                    })
+                    Err(RuntimeError::generic(name.line, "Only instances have properties"))
                 }
             }
             Expr::Set { object, name, value } => {
@@ -39,10 +36,7 @@ impl Interpreter {
                     instance.borrow_mut().set(name, value.clone());
                     Ok(value)
                 } else {
-                    Err(RuntimeError::Generic {
-                        line: name.line,
-                        msg: "Only instances have properties".to_owned(),
-                    })
+                    Err(RuntimeError::generic(name.line, "Only instances have properties"))
                 }
             }
             Expr::Super { keyword, method: method_name } => {
@@ -62,10 +56,10 @@ impl Interpreter {
                 if let Some(method) = method {
                     Ok(Object::Callable(method.bind(instance)))
                 } else {
-                    Err(RuntimeError::Generic {
-                        line: method_name.line,
-                        msg: format!("Undefined property '{}'", method_name.lexeme),
-                    })
+                    Err(RuntimeError::generic(
+                        method_name.line,
+                        format!("Undefined property '{}'", method_name.lexeme),
+                    ))
                 }
             }
             Expr::This { keyword } => self.lookup_variable(keyword, expr),
@@ -90,14 +84,14 @@ impl Interpreter {
                 match callee {
                     Object::Callable(callable) => {
                         if callable.arity() != arguments.len() {
-                            return Err(RuntimeError::Generic {
-                                line: paren.line,
-                                msg: format!(
+                            return Err(RuntimeError::generic(
+                                paren.line,
+                                format!(
                                     "Expected {} arguments, got {}",
                                     callable.arity(),
                                     arguments.len()
                                 ),
-                            });
+                            ));
                         }
                         // Evaluate all arguments
                         let mut args = vec![];
@@ -110,14 +104,10 @@ impl Interpreter {
                     Object::Class(class) => {
                         let arity = class.borrow().arity();
                         if arity != arguments.len() {
-                            return Err(RuntimeError::Generic {
-                                line: paren.line,
-                                msg: format!(
-                                    "Expected {} arguments, got {}",
-                                    arity,
-                                    arguments.len()
-                                ),
-                            });
+                            return Err(RuntimeError::generic(
+                                paren.line,
+                                format!("Expected {} arguments, got {}", arity, arguments.len()),
+                            ));
                         }
 
                         // Evaluate all arguments
@@ -128,10 +118,10 @@ impl Interpreter {
 
                         Class::construct(class, args, self).map(Object::Instance)
                     }
-                    _ => Err(RuntimeError::Generic {
-                        line: paren.line,
-                        msg: "Can only call functions and classes".to_owned(),
-                    }),
+                    _ => Err(RuntimeError::generic(
+                        paren.line,
+                        "Can only call functions and classes",
+                    )),
                 }
             }
         }
@@ -148,10 +138,7 @@ impl Interpreter {
                 if let Object::Number(n) = value {
                     Ok(Object::Number(-n))
                 } else {
-                    Err(RuntimeError::Generic {
-                        line: operator.line,
-                        msg: "Operand must be a number".to_owned(),
-                    })
+                    Err(RuntimeError::generic(operator.line, "Operand must be a number"))
                 }
             }
             TokenType::Bang => Ok(Object::Boolean(!self.is_truthy(&value))),
@@ -177,10 +164,10 @@ impl Interpreter {
                 } else if let (Some(l), Some(r)) = (left_value.string(), right_value.string()) {
                     Ok(Object::String(format!("{l}{r}")))
                 } else {
-                    Err(RuntimeError::Generic {
-                        line: operator.line,
-                        msg: "Operands must be two numbers or two strings".to_owned(),
-                    })
+                    Err(RuntimeError::generic(
+                        operator.line,
+                        "Operands must be two numbers or two strings",
+                    ))
                 }
             }
             TokenType::Minus => self
@@ -222,10 +209,7 @@ impl Interpreter {
         if let (Some(l), Some(r)) = (left.number(), right.number()) {
             Ok((l, r))
         } else {
-            Err(RuntimeError::Generic {
-                line: operator.line,
-                msg: "Operands must be numbers".to_owned(),
-            })
+            Err(RuntimeError::generic(operator.line, "Operands must be numbers"))
         }
     }
 

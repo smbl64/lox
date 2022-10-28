@@ -79,10 +79,7 @@ impl Instance {
 
             Ok(Object::Callable(function))
         } else {
-            Err(RuntimeError::Generic {
-                line: field.line,
-                msg: format!("Undefined property '{}'", field.lexeme),
-            })
+            Err(RuntimeError::generic(field.line, format!("Undefined property '{}'", field.lexeme)))
         }
     }
 
