@@ -13,10 +13,6 @@ impl Interpreter {
         }
     }
 
-    pub fn execute(&mut self, stmt: &Stmt) -> Result<(), RuntimeError> {
-        self.evaluate_stmt(stmt)
-    }
-
     pub fn execute_block<I, R>(
         &mut self,
         statements: I,
@@ -45,76 +41,13 @@ impl Interpreter {
         self.locals.insert(input.unique_id(), depth);
     }
 
-    fn evaluate_stmt(&mut self, stmt: &Stmt) -> Result<(), RuntimeError> {
+    pub fn execute(&mut self, stmt: &Stmt) -> Result<(), RuntimeError> {
         match stmt {
             Stmt::Expression { expr } => {
                 self.evaluate_expr(expr)?;
             }
             Stmt::Class { name, methods, superclass } => {
-                // TODO: this looks really ugly!!
-                let superclass = if let Some(s) = superclass {
-                    let obj = self.evaluate_expr(s)?;
-                    match obj {
-                        Object::Class(c) => Some(c),
-                        _ => {
-                            if let Expr::Variable { name: super_name } = s {
-                                return Err(RuntimeError::Generic {
-                                    name: super_name.clone(),
-                                    msg: "Superclass must be a class".to_owned(),
-                                });
-                            } else {
-                                panic!("Superclass is not enclosed in a Expr::Variable!");
-                            }
-                        }
-                    }
-                } else {
-                    None
-                };
-
-                self.environment.borrow_mut().define(&name.lexeme, Object::Null);
-
-                if let Some(ref superclass) = superclass {
-                    self.environment =
-                        Environment::new().with_enclosing(self.environment.clone()).as_rc();
-
-                    self.environment
-                        .borrow_mut()
-                        .define("super", Object::Class(superclass.clone()));
-                }
-
-                // Create method functions
-                let mut method_funcs = HashMap::new();
-                for method in methods {
-                    if let Stmt::Function { name, params, body } = method {
-                        let is_initializer = name.lexeme == "init";
-
-                        method_funcs.insert(
-                            name.lexeme.clone(),
-                            Rc::new(LoxFunction::new(
-                                name.clone(),
-                                params.to_vec(),
-                                body,
-                                self.environment.clone(),
-                                is_initializer,
-                            )),
-                        );
-                    } else {
-                        panic!("Method is not encapsulated in Stmt::Function");
-                    }
-                }
-
-                let class = Rc::new(RefCell::new(Class::new(
-                    &name.lexeme,
-                    method_funcs,
-                    superclass.clone(),
-                )));
-
-                if superclass.is_some() {
-                    let enclosing = self.environment.borrow().enclosing.clone().unwrap();
-                    self.environment = enclosing;
-                }
-
-                self.environment.borrow_mut().assign(name, Object::Class(class))?;
+                self.handle_class_stmt(name, methods, superclass)?
             }
             Stmt::Function { name, params, body } => {
                 // self.environment is the current active environment when function
@@ -167,23 +100,99 @@ impl Interpreter {
                     self.execute(stmt.as_ref())?;
                 }
             }
-            Stmt::While { condition, body } => loop {
-                let value = &self.evaluate_expr(condition)?;
-                if !self.is_truthy(value) {
-                    break;
-                }
-
-                // We will catch 'Break' runtime errors. That error means that we hit a `break`
-                // statement. Any other error will be propagated up.
-                let result = self.execute(body);
-
-                if matches!(result, Err(RuntimeError::Break { token: _ })) {
-                    break;
-                }
-
-                result?;
-            },
+            Stmt::While { condition, body } => self.handle_while_stmt(condition, body)?,
         };
+        Ok(())
+    }
+
+    pub fn handle_class_stmt(
+        &mut self,
+        name: &Token,
+        methods: &Vec<Stmt>,
+        superclass: &Option<Expr>,
+    ) -> Result<(), RuntimeError> {
+        // TODO: this looks really ugly!!
+        let superclass = if let Some(s) = superclass {
+            let obj = self.evaluate_expr(s)?;
+            match obj {
+                Object::Class(c) => Some(c),
+                _ => {
+                    if let Expr::Variable { name: super_name } = s {
+                        return Err(RuntimeError::Generic {
+                            name: super_name.clone(),
+                            msg: "Superclass must be a class".to_owned(),
+                        });
+                    } else {
+                        panic!("Superclass is not enclosed in a Expr::Variable!");
+                    }
+                }
+            }
+        } else {
+            None
+        };
+
+        self.environment.borrow_mut().define(&name.lexeme, Object::Null);
+
+        if let Some(ref superclass) = superclass {
+            self.environment = Environment::new().with_enclosing(self.environment.clone()).as_rc();
+
+            self.environment.borrow_mut().define("super", Object::Class(superclass.clone()));
+        }
+
+        // Create method functions
+        let mut method_funcs = HashMap::new();
+        for method in methods {
+            if let Stmt::Function { name, params, body } = method {
+                let is_initializer = name.lexeme == "init";
+
+                method_funcs.insert(
+                    name.lexeme.clone(),
+                    Rc::new(LoxFunction::new(
+                        name.clone(),
+                        params.to_vec(),
+                        body,
+                        self.environment.clone(),
+                        is_initializer,
+                    )),
+                );
+            } else {
+                panic!("Method is not encapsulated in Stmt::Function");
+            }
+        }
+
+        let class =
+            Rc::new(RefCell::new(Class::new(&name.lexeme, method_funcs, superclass.clone())));
+
+        if superclass.is_some() {
+            let enclosing = self.environment.borrow().enclosing.clone().unwrap();
+            self.environment = enclosing;
+        }
+
+        self.environment.borrow_mut().assign(name, Object::Class(class))
+    }
+
+    pub fn handle_while_stmt(
+        &mut self,
+        condition: &Expr,
+        body: &Box<Stmt>,
+    ) -> Result<(), RuntimeError> {
+        loop {
+            let value = &self.evaluate_expr(condition)?;
+            if !self.is_truthy(value) {
+                break;
+            }
+
+            // We will catch 'Break' runtime errors. That error means that we hit a `break`
+            // statement. Any other error will be propagated up.
+            let result = self.execute(body);
+
+            if matches!(result, Err(RuntimeError::Break { token: _ })) {
+                break;
+            }
+
+            result?;
+        }
+
         Ok(())
     }
 

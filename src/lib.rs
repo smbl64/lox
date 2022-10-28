@@ -26,6 +26,7 @@ pub mod prelude {
     pub use crate::resolver::Resolver;
     pub use crate::scanner::*;
     pub use crate::token::*;
+    pub use crate::Shared;
 }
 
 use std::cell::RefCell;
@@ -34,8 +35,8 @@ use std::rc::Rc;
 
 use prelude::{Interpreter, Parser, Resolver, RuntimeError};
 
-type Shared<T> = Rc<RefCell<T>>;
-type SharedErrorReporter = Shared<ErrorReporter>;
+pub type Shared<T> = Rc<RefCell<T>>;
+pub type SharedErrorReporter = Shared<ErrorReporter>;
 
 pub struct Lox {
     interpreter: Interpreter,

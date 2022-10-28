@@ -24,3 +24,6 @@ walkdir = "2"
 [[bench]]
 name = "my_benchmark"
 harness = false
+
+[profile.release]
+debug = true

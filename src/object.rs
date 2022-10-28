@@ -1,4 +1,3 @@
-use std::cell::RefCell;
 use std::fmt::Display;
 use std::rc::Rc;
 
@@ -11,8 +10,8 @@ pub enum Object {
     Number(f64),
     String(String),
     Callable(Rc<dyn Callable>),
-    Class(Rc<RefCell<Class>>),
-    Instance(Rc<RefCell<Instance>>),
+    Class(Shared<Class>),
+    Instance(Shared<Instance>),
 }
 
 impl PartialEq for Object {
