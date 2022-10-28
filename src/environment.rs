@@ -21,7 +21,7 @@ impl Environment {
         Self { enclosing: Some(enclosing), ..Default::default() }
     }
 
-    pub fn as_rc(self) -> Rc<RefCell<Self>> {
+    pub fn as_shared(self) -> Rc<RefCell<Self>> {
         Rc::new(RefCell::new(self))
     }
 

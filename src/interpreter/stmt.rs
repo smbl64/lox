@@ -87,7 +87,8 @@ impl Interpreter {
             }
             Stmt::Block { statements } => {
                 // Create a new environment for executing the block
-                let new_env = Environment::new().with_enclosing(self.environment.clone()).as_rc();
+                let new_env =
+                    Environment::new().with_enclosing(self.environment.clone()).as_shared();
 
                 self.execute_block(statements, new_env)?;
             }
@@ -134,7 +135,8 @@ impl Interpreter {
         self.environment.borrow_mut().define(&name.lexeme, Object::Null);
 
         if let Some(ref superclass) = superclass {
-            self.environment = Environment::new().with_enclosing(self.environment.clone()).as_rc();
+            self.environment =
+                Environment::new().with_enclosing(self.environment.clone()).as_shared();
 
             self.environment.borrow_mut().define("super", Object::Class(superclass.clone()));
         }

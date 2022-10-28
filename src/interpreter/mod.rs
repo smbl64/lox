@@ -19,7 +19,7 @@ pub struct Interpreter {
 
 impl Interpreter {
     pub fn new() -> Self {
-        let globals = Environment::new().as_rc();
+        let globals = Environment::new().as_shared();
         let environment = globals.clone();
 
         globals.borrow_mut().define("clock", Object::Callable(crate::native::clock()));

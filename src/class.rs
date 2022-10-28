@@ -9,14 +9,14 @@ use crate::prelude::*;
 pub struct Class {
     name: String,
     methods: HashMap<String, Rc<LoxFunction>>,
-    superclass: Option<Rc<RefCell<Self>>>,
+    superclass: Option<Shared<Self>>,
 }
 
 impl Class {
     pub fn new(
         name: impl AsRef<str>,
         methods: HashMap<String, Rc<LoxFunction>>,
-        superclass: Option<Rc<RefCell<Self>>>,
+        superclass: Option<Shared<Self>>,
     ) -> Self {
         Self { name: name.as_ref().to_owned(), methods, superclass }
     }
@@ -30,10 +30,10 @@ impl Display for Class {
 
 impl Class {
     pub fn construct(
-        class: Rc<RefCell<Class>>,
+        class: Shared<Class>,
         arguments: Vec<Object>,
         interpreter: &mut Interpreter,
-    ) -> Result<Rc<RefCell<Instance>>, RuntimeError> {
+    ) -> Result<Shared<Instance>, RuntimeError> {
         let instance = Rc::new(RefCell::new(Instance::new(class.clone())));
 
         if let Some(initializer) = class.borrow().find_method("init") {
@@ -62,12 +62,12 @@ impl Class {
 
 #[derive(Debug, Clone)]
 pub struct Instance {
-    class: Rc<RefCell<Class>>,
+    class: Shared<Class>,
     fields: HashMap<String, Object>,
 }
 
 impl Instance {
-    pub fn new(class: Rc<RefCell<Class>>) -> Self {
+    pub fn new(class: Shared<Class>) -> Self {
         Self { class, fields: HashMap::new() }
     }
 

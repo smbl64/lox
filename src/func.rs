@@ -1,4 +1,3 @@
-use std::cell::RefCell;
 use std::fmt::{Debug, Display};
 use std::rc::Rc;
 
@@ -18,7 +17,7 @@ pub struct LoxFunction {
     name: Token,
     params: Vec<Token>,
     body: Vec<Rc<Stmt>>,
-    closure: Rc<RefCell<Environment>>,
+    closure: Shared<Environment>,
     is_initializer: bool,
 }
 
@@ -27,15 +26,15 @@ impl LoxFunction {
         name: Token,
         params: Vec<Token>,
         body: &[Rc<Stmt>],
-        closure: Rc<RefCell<Environment>>,
+        closure: Shared<Environment>,
         is_initializer: bool,
     ) -> Self {
         Self { name, params, body: body.to_vec(), closure, is_initializer }
     }
 
-    pub fn bind(&self, instance: Object) -> Rc<LoxFunction> {
-        let env = Environment::new().with_enclosing(self.closure.clone()).as_rc();
-        env.borrow_mut().define("this", instance);
+    pub fn bind(&self, this: Object) -> Rc<LoxFunction> {
+        let env = Environment::new().with_enclosing(self.closure.clone()).as_shared();
+        env.borrow_mut().define("this", this);
 
         Rc::new(LoxFunction::new(
             self.name.clone(),
@@ -44,6 +43,18 @@ impl LoxFunction {
             env,
             self.is_initializer,
         ))
+    }
+
+    fn new_env_for_call(&self, arguments: Vec<Object>) -> Shared<Environment> {
+        let mut environment = Environment::new().with_enclosing(self.closure.clone());
+
+        // Put all arguments in this new environment
+        //let mut env_borrow = environment.borrow_mut();
+        for (arg, param) in arguments.iter().zip(&self.params) {
+            environment.define(param.lexeme.as_str(), arg.clone());
+        }
+
+        environment.as_shared()
     }
 }
 
@@ -57,22 +68,14 @@ impl Callable for LoxFunction {
         interpret: &mut Interpreter,
         arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
-        let environment = Environment::new().with_enclosing(self.closure.clone()).as_rc();
-
-        {
-            let mut env_borrow = environment.borrow_mut();
-            for (arg, param) in arguments.iter().zip(&self.params) {
-                env_borrow.define(param.lexeme.as_str(), arg.clone());
-            }
-        }
+        let environment = self.new_env_for_call(arguments);
 
         let res = interpret.execute_block(&self.body, environment);
 
         // If this is an initializer and we didn't get an error, return "this" as the
         // return value
         if self.is_initializer
-            && (matches!(res, Ok(_))
-                || matches!(res, Err(RuntimeError::Return { token: _, value: _ })))
+            && (matches!(res, Ok(_)) || matches!(res, Err(RuntimeError::Return { .. })))
         {
             let token = Token::new(TokenType::This, "this", None, -1);
             return self.closure.borrow().get_at(0, &token);
@@ -81,7 +84,7 @@ impl Callable for LoxFunction {
         // If a 'Return' runtime exception is generated, this means the block had a
         // return statement. We should extract the value from it and return it.
         // Otherwise, return Object::Null or the runtime error.
-        if let Err(RuntimeError::Return { token: _, value }) = res {
+        if let Err(RuntimeError::Return { value, .. }) = res {
             Ok(value)
         } else {
             res.map(|_| Object::Null)
