@@ -40,28 +40,9 @@ impl Interpreter {
                 }
             }
             Expr::Super { keyword, method: method_name } => {
-                let distance = *self.locals.get(&expr.unique_id()).expect("Cannot find distance");
-
-                let superclass = self.environment.borrow().get_at(distance, keyword)?;
-                let superclass = match superclass {
-                    Object::Class(c) => c,
-                    _ => panic!("Superclass is not wrapped in Object::Class"),
-                };
-
-                let this = Token::new(TokenType::Identifier, "this", None, -1);
-                let instance = self.environment.borrow().get_at(distance - 1, &this)?;
-
-                let method = superclass.borrow().find_method(&method_name.lexeme);
-
-                if let Some(method) = method {
-                    Ok(Object::Callable(method.bind(instance)))
-                } else {
-                    Err(RuntimeError::generic(
-                        method_name.line,
-                        format!("Undefined property '{}'", method_name.lexeme),
-                    ))
-                }
+                self.evaluate_super(expr, keyword, method_name)
             }
+
             Expr::This { keyword } => self.lookup_variable(keyword, expr),
             Expr::Logical { left, operator, right } => {
                 let left_val = self.evaluate_expr(left)?;
@@ -80,55 +61,81 @@ impl Interpreter {
                 self.evaluate_expr(right)
             }
             Expr::Call { callee, paren, arguments } => {
-                let callee = self.evaluate_expr(callee)?;
-                match callee {
-                    Object::Callable(callable) => {
-                        if callable.arity() != arguments.len() {
-                            return Err(RuntimeError::generic(
-                                paren.line,
-                                format!(
-                                    "Expected {} arguments, got {}",
-                                    callable.arity(),
-                                    arguments.len()
-                                ),
-                            ));
-                        }
-                        // Evaluate all arguments
-                        let mut args = vec![];
-                        for arg in arguments {
-                            args.push(self.evaluate_expr(arg)?);
-                        }
-
-                        callable.call(self, args)
-                    }
-                    Object::Class(class) => {
-                        let arity = class.borrow().arity();
-                        if arity != arguments.len() {
-                            return Err(RuntimeError::generic(
-                                paren.line,
-                                format!("Expected {} arguments, got {}", arity, arguments.len()),
-                            ));
-                        }
-
-                        // Evaluate all arguments
-                        let mut args = vec![];
-                        for arg in arguments {
-                            args.push(self.evaluate_expr(arg)?);
-                        }
-
-                        Class::construct(class, args, self).map(Object::Instance)
-                    }
-                    _ => Err(RuntimeError::generic(
-                        paren.line,
-                        "Can only call functions and classes",
-                    )),
-                }
+                self.evaluate_call(callee, paren.line, arguments)
             }
         }
     }
 
     pub(super) fn is_truthy(&self, value: &Object) -> bool {
         !matches!(value, Object::Null | Object::Boolean(false))
+    }
+
+    fn evaluate_call(&mut self, callee: &Expr, line: i32, arguments: &[Expr]) -> InterpreterResult {
+        let callee = self.evaluate_expr(callee)?;
+        match callee {
+            Object::Callable(callable) => {
+                if callable.arity() != arguments.len() {
+                    return Err(RuntimeError::generic(
+                        line,
+                        format!("Expected {} arguments, got {}", callable.arity(), arguments.len()),
+                    ));
+                }
+                // Evaluate all arguments
+                let mut args = vec![];
+                for arg in arguments {
+                    args.push(self.evaluate_expr(arg)?);
+                }
+
+                callable.call(self, args)
+            }
+            Object::Class(class) => {
+                let arity = class.borrow().arity();
+                if arity != arguments.len() {
+                    return Err(RuntimeError::generic(
+                        line,
+                        format!("Expected {} arguments, got {}", arity, arguments.len()),
+                    ));
+                }
+
+                // Evaluate all arguments
+                let mut args = vec![];
+                for arg in arguments {
+                    args.push(self.evaluate_expr(arg)?);
+                }
+
+                Class::construct(class, args, self).map(Object::Instance)
+            }
+            _ => Err(RuntimeError::generic(line, "Can only call functions and classes")),
+        }
+    }
+
+    fn evaluate_super(
+        &mut self,
+        expr: &Expr,
+        keyword: &Token,
+        method_name: &Token,
+    ) -> InterpreterResult {
+        let distance = *self.locals.get(&expr.unique_id()).expect("Cannot find distance");
+
+        let superclass = self.environment.borrow().get_at(distance, keyword)?;
+        let superclass = match superclass {
+            Object::Class(c) => c,
+            _ => panic!("Superclass is not wrapped in Object::Class"),
+        };
+
+        let this = Token::new(TokenType::Identifier, "this", None, -1);
+        let instance = self.environment.borrow().get_at(distance - 1, &this)?;
+
+        let method = superclass.borrow().find_method(&method_name.lexeme);
+
+        if let Some(method) = method {
+            Ok(Object::Callable(method.bind(instance)))
+        } else {
+            Err(RuntimeError::generic(
+                method_name.line,
+                format!("Undefined property '{}'", method_name.lexeme),
+            ))
+        }
     }
 
     fn evaluate_unary(&mut self, operator: &Token, right: &Expr) -> InterpreterResult {

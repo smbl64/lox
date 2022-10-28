@@ -68,12 +68,14 @@ impl Callable for LoxFunction {
         interpret: &mut Interpreter,
         arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError> {
+        // Every call needs a new environment (i.e. "stack"). If we keep one stack for
+        // all calls, subsequent calls will override each others' parameters.
         let environment = self.new_env_for_call(arguments);
 
         let res = interpret.execute_block(&self.body, environment);
 
-        // If this is an initializer and we didn't get an error, return "this" as the
-        // return value
+        // If this function is an initializer and we didn't get an error, return "this"
+        // as the return value.
         if self.is_initializer
             && (matches!(res, Ok(_)) || matches!(res, Err(RuntimeError::Return { .. })))
         {
