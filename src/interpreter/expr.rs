@@ -97,7 +97,7 @@ impl Interpreter {
                 if arity != arguments.len() {
                     return Err(RuntimeInterrupt::error(
                         line,
-                        format!("Expected {} arguments but got {}.", arity, arguments.len()),
+                        format!("Expected {arity} arguments but got {}.", arguments.len()),
                     ));
                 }
 

@@ -19,13 +19,13 @@ impl Display for RuntimeInterrupt {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             RuntimeInterrupt::Error { line, msg } => {
-                write!(f, "[line {}] {msg}", line)
+                write!(f, "[line {line}] {msg}")
             }
             RuntimeInterrupt::Break { line } => {
-                write!(f, "[line {}] Unexpected break statement", line)
+                write!(f, "[line {line}] Unexpected break statement")
             }
             RuntimeInterrupt::Return { line, .. } => {
-                write!(f, "[line {}] Unexpected return statement", line)
+                write!(f, "[line {line}] Unexpected return statement")
             }
         }
     }

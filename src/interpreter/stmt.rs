@@ -176,7 +176,7 @@ impl Interpreter {
     pub fn handle_while_stmt(
         &mut self,
         condition: &Expr,
-        body: &Box<Stmt>,
+        body: &Stmt,
     ) -> Result<(), RuntimeInterrupt> {
         loop {
             let value = &self.evaluate_expr(condition)?;
