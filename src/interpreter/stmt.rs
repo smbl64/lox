@@ -17,7 +17,7 @@ impl Interpreter {
         &mut self,
         statements: I,
         environment: Rc<RefCell<Environment>>,
-    ) -> Result<(), RuntimeError>
+    ) -> Result<(), RuntimeInterrupt>
     where
         I: IntoIterator<Item = R>,
         R: AsRef<Stmt>,
@@ -41,7 +41,7 @@ impl Interpreter {
         self.locals.insert(input.unique_id(), depth);
     }
 
-    pub fn execute(&mut self, stmt: &Stmt) -> Result<(), RuntimeError> {
+    pub fn execute(&mut self, stmt: &Stmt) -> Result<(), RuntimeInterrupt> {
         match stmt {
             Stmt::Expression { expr } => {
                 self.evaluate_expr(expr)?;
@@ -61,12 +61,12 @@ impl Interpreter {
                     .borrow_mut()
                     .define(&name.lexeme, Object::Callable(Rc::new(function)));
             }
-            Stmt::Break { token } => return Err(RuntimeError::Break { line: token.line }),
+            Stmt::Break { token } => return Err(RuntimeInterrupt::Break { line: token.line }),
             Stmt::Return { keyword, value } => {
                 let value =
                     if let Some(expr) = value { self.evaluate_expr(expr)? } else { Object::Null };
 
-                return Err(RuntimeError::Return { line: keyword.line, value });
+                return Err(RuntimeInterrupt::Return { line: keyword.line, value });
             }
             Stmt::Print { exprs } => {
                 for expr in exprs {
@@ -111,7 +111,7 @@ impl Interpreter {
         name: &Token,
         methods: &Vec<Stmt>,
         superclass: &Option<Expr>,
-    ) -> Result<(), RuntimeError> {
+    ) -> Result<(), RuntimeInterrupt> {
         // TODO: this looks really ugly!!
         let superclass = if let Some(s) = superclass {
             let obj = self.evaluate_expr(s)?;
@@ -119,7 +119,7 @@ impl Interpreter {
                 Object::Class(c) => Some(c),
                 _ => {
                     if let Expr::Variable { name: super_name } = s {
-                        return Err(RuntimeError::generic(
+                        return Err(RuntimeInterrupt::error(
                             super_name.line,
                             "Superclass must be a class",
                         ));
@@ -177,7 +177,7 @@ impl Interpreter {
         &mut self,
         condition: &Expr,
         body: &Box<Stmt>,
-    ) -> Result<(), RuntimeError> {
+    ) -> Result<(), RuntimeInterrupt> {
         loop {
             let value = &self.evaluate_expr(condition)?;
             if !self.is_truthy(value) {
@@ -188,7 +188,7 @@ impl Interpreter {
             // statement. Any other error will be propagated up.
             let result = self.execute(body);
 
-            if matches!(result, Err(RuntimeError::Break { .. })) {
+            if matches!(result, Err(RuntimeInterrupt::Break { .. })) {
                 break;
             }
 
@@ -198,7 +198,7 @@ impl Interpreter {
         Ok(())
     }
 
-    fn runtime_error(&self, e: RuntimeError) {
+    fn runtime_error(&self, e: RuntimeInterrupt) {
         if self.error_reporter.is_none() {
             return;
         }

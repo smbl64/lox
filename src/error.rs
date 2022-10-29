@@ -3,28 +3,28 @@ use std::fmt::Display;
 use crate::object::Object;
 
 #[derive(Debug, PartialEq)]
-pub enum RuntimeError {
-    Generic { line: i32, msg: String },
+pub enum RuntimeInterrupt {
+    Error { line: i32, msg: String },
     Break { line: i32 },
     Return { line: i32, value: Object },
 }
 
-impl RuntimeError {
-    pub fn generic(line: i32, msg: impl AsRef<str>) -> Self {
-        Self::Generic { line, msg: msg.as_ref().to_owned() }
+impl RuntimeInterrupt {
+    pub fn error(line: i32, msg: impl AsRef<str>) -> Self {
+        Self::Error { line, msg: msg.as_ref().to_owned() }
     }
 }
 
-impl Display for RuntimeError {
+impl Display for RuntimeInterrupt {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            RuntimeError::Generic { line, msg } => {
+            RuntimeInterrupt::Error { line, msg } => {
                 write!(f, "[line {}] {msg}", line)
             }
-            RuntimeError::Break { line } => {
+            RuntimeInterrupt::Break { line } => {
                 write!(f, "[line {}] Unexpected break statement", line)
             }
-            RuntimeError::Return { line, .. } => {
+            RuntimeInterrupt::Return { line, .. } => {
                 write!(f, "[line {}] Unexpected return statement", line)
             }
         }

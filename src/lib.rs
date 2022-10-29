@@ -33,7 +33,7 @@ use std::cell::RefCell;
 use std::io::Write;
 use std::rc::Rc;
 
-use prelude::{Interpreter, Parser, Resolver, RuntimeError};
+use prelude::{Interpreter, Parser, Resolver, RuntimeInterrupt};
 
 pub type Shared<T> = Rc<RefCell<T>>;
 pub type SharedErrorReporter = Shared<ErrorReporter>;
@@ -120,7 +120,7 @@ impl ErrorReporter {
         self.had_error = true;
     }
 
-    pub fn runtime_error(&mut self, e: &RuntimeError) {
+    pub fn runtime_error(&mut self, e: &RuntimeInterrupt) {
         eprintln!("{e}");
         self.had_runtime_error = true;
     }

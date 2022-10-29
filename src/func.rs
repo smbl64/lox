@@ -9,7 +9,7 @@ pub trait Callable: Debug + Display {
         &self,
         interpret: &mut Interpreter,
         arguments: Vec<Object>,
-    ) -> Result<Object, RuntimeError>;
+    ) -> Result<Object, RuntimeInterrupt>;
 }
 
 #[derive(Debug, Clone)]
@@ -67,7 +67,7 @@ impl Callable for LoxFunction {
         &self,
         interpret: &mut Interpreter,
         arguments: Vec<Object>,
-    ) -> Result<Object, RuntimeError> {
+    ) -> Result<Object, RuntimeInterrupt> {
         // Every call needs a new environment (i.e. "stack"). If we keep one stack for
         // all calls, subsequent calls will override each others' parameters.
         let environment = self.new_env_for_call(arguments);
@@ -77,7 +77,7 @@ impl Callable for LoxFunction {
         // If this function is an initializer and we didn't get an error, return "this"
         // as the return value.
         if self.is_initializer
-            && (matches!(res, Ok(_)) || matches!(res, Err(RuntimeError::Return { .. })))
+            && (matches!(res, Ok(_)) || matches!(res, Err(RuntimeInterrupt::Return { .. })))
         {
             let token = Token::new(TokenType::This, "this", None, -1);
             return self.closure.borrow().get_at(0, &token);
@@ -86,7 +86,7 @@ impl Callable for LoxFunction {
         // If a 'Return' runtime exception is generated, this means the block had a
         // return statement. We should extract the value from it and return it.
         // Otherwise, return Object::Null or the runtime error.
-        if let Err(RuntimeError::Return { value, .. }) = res {
+        if let Err(RuntimeInterrupt::Return { value, .. }) = res {
             Ok(value)
         } else {
             res.map(|_| Object::Null)

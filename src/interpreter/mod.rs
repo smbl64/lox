@@ -8,7 +8,7 @@ use std::rc::Rc;
 use crate::prelude::*;
 use crate::SharedErrorReporter;
 
-type InterpreterResult = Result<Object, RuntimeError>;
+type InterpreterResult = Result<Object, RuntimeInterrupt>;
 
 pub struct Interpreter {
     pub globals: Rc<RefCell<Environment>>,

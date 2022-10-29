@@ -25,7 +25,7 @@ impl Interpreter {
                 if let Object::Instance(ref instance) = object {
                     instance.borrow().get(name, &object)
                 } else {
-                    Err(RuntimeError::generic(name.line, "Only instances have properties"))
+                    Err(RuntimeInterrupt::error(name.line, "Only instances have properties"))
                 }
             }
             Expr::Set { object, name, value } => {
@@ -36,7 +36,7 @@ impl Interpreter {
                     instance.borrow_mut().set(name, value.clone());
                     Ok(value)
                 } else {
-                    Err(RuntimeError::generic(name.line, "Only instances have properties"))
+                    Err(RuntimeInterrupt::error(name.line, "Only instances have properties"))
                 }
             }
             Expr::Super { keyword, method: method_name } => {
@@ -75,7 +75,7 @@ impl Interpreter {
         match callee {
             Object::Callable(callable) => {
                 if callable.arity() != arguments.len() {
-                    return Err(RuntimeError::generic(
+                    return Err(RuntimeInterrupt::error(
                         line,
                         format!("Expected {} arguments, got {}", callable.arity(), arguments.len()),
                     ));
@@ -91,7 +91,7 @@ impl Interpreter {
             Object::Class(class) => {
                 let arity = class.borrow().arity();
                 if arity != arguments.len() {
-                    return Err(RuntimeError::generic(
+                    return Err(RuntimeInterrupt::error(
                         line,
                         format!("Expected {} arguments, got {}", arity, arguments.len()),
                     ));
@@ -105,7 +105,7 @@ impl Interpreter {
 
                 Class::construct(class, args, self).map(Object::Instance)
             }
-            _ => Err(RuntimeError::generic(line, "Can only call functions and classes")),
+            _ => Err(RuntimeInterrupt::error(line, "Can only call functions and classes")),
         }
     }
 
@@ -131,7 +131,7 @@ impl Interpreter {
         if let Some(method) = method {
             Ok(Object::Callable(method.bind(instance)))
         } else {
-            Err(RuntimeError::generic(
+            Err(RuntimeInterrupt::error(
                 method_name.line,
                 format!("Undefined property '{}'", method_name.lexeme),
             ))
@@ -145,7 +145,7 @@ impl Interpreter {
                 if let Object::Number(n) = value {
                     Ok(Object::Number(-n))
                 } else {
-                    Err(RuntimeError::generic(operator.line, "Operand must be a number"))
+                    Err(RuntimeInterrupt::error(operator.line, "Operand must be a number"))
                 }
             }
             TokenType::Bang => Ok(Object::Boolean(!self.is_truthy(&value))),
@@ -171,7 +171,7 @@ impl Interpreter {
                 } else if let (Some(l), Some(r)) = (left_value.string(), right_value.string()) {
                     Ok(Object::String(format!("{l}{r}")))
                 } else {
-                    Err(RuntimeError::generic(
+                    Err(RuntimeInterrupt::error(
                         operator.line,
                         "Operands must be two numbers or two strings",
                     ))
@@ -212,15 +212,15 @@ impl Interpreter {
         operator: &Token,
         left: &Object,
         right: &Object,
-    ) -> Result<(f64, f64), RuntimeError> {
+    ) -> Result<(f64, f64), RuntimeInterrupt> {
         if let (Some(l), Some(r)) = (left.number(), right.number()) {
             Ok((l, r))
         } else {
-            Err(RuntimeError::generic(operator.line, "Operands must be numbers"))
+            Err(RuntimeInterrupt::error(operator.line, "Operands must be numbers"))
         }
     }
 
-    fn lookup_variable(&self, name: &Token, expr: &Expr) -> Result<Object, RuntimeError> {
+    fn lookup_variable(&self, name: &Token, expr: &Expr) -> Result<Object, RuntimeInterrupt> {
         if let Some(&distance) = self.locals.get(&expr.unique_id()) {
             self.environment.borrow().get_at(distance, name)
         } else {

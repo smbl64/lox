@@ -17,7 +17,7 @@ impl Callable for Clock {
         &self,
         _interpret: &mut Interpreter,
         _arguments: Vec<Object>,
-    ) -> Result<Object, RuntimeError> {
+    ) -> Result<Object, RuntimeInterrupt> {
         let start = SystemTime::now();
         let since_epoch = start.duration_since(UNIX_EPOCH).expect("Time went backward");
 

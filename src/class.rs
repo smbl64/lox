@@ -33,7 +33,7 @@ impl Class {
         class: Shared<Class>,
         arguments: Vec<Object>,
         interpreter: &mut Interpreter,
-    ) -> Result<Shared<Instance>, RuntimeError> {
+    ) -> Result<Shared<Instance>, RuntimeInterrupt> {
         let instance = Rc::new(RefCell::new(Instance::new(class.clone())));
 
         if let Some(initializer) = class.borrow().find_method("init") {
@@ -71,7 +71,7 @@ impl Instance {
         Self { class, fields: HashMap::new() }
     }
 
-    pub fn get(&self, field: &Token, instance: &Object) -> Result<Object, RuntimeError> {
+    pub fn get(&self, field: &Token, instance: &Object) -> Result<Object, RuntimeInterrupt> {
         if let Some(object) = self.fields.get(&field.lexeme) {
             Ok(object.clone())
         } else if let Some(function) = self.class.borrow().find_method(&field.lexeme) {
@@ -79,7 +79,10 @@ impl Instance {
 
             Ok(Object::Callable(function))
         } else {
-            Err(RuntimeError::generic(field.line, format!("Undefined property '{}'", field.lexeme)))
+            Err(RuntimeInterrupt::error(
+                field.line,
+                format!("Undefined property '{}'", field.lexeme),
+            ))
         }
     }
 
