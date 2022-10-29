@@ -31,7 +31,7 @@ impl Display for Class {
 impl Class {
     pub fn construct(
         class: Shared<Class>,
-        arguments: Vec<Object>,
+        arguments: &[Object],
         interpreter: &mut Interpreter,
     ) -> Result<Shared<Instance>, RuntimeInterrupt> {
         let instance = Rc::new(RefCell::new(Instance::new(class.clone())));

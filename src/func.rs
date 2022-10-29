@@ -8,7 +8,7 @@ pub trait Callable: Debug + Display {
     fn call(
         &self,
         interpret: &mut Interpreter,
-        arguments: Vec<Object>,
+        arguments: &[Object],
     ) -> Result<Object, RuntimeInterrupt>;
 }
 
@@ -45,7 +45,7 @@ impl LoxFunction {
         ))
     }
 
-    fn new_env_for_call(&self, arguments: Vec<Object>) -> Shared<Environment> {
+    fn new_env_for_call(&self, arguments: &[Object]) -> Shared<Environment> {
         let mut environment = Environment::new().with_enclosing(self.closure.clone());
 
         // Put all arguments in this new environment
@@ -66,7 +66,7 @@ impl Callable for LoxFunction {
     fn call(
         &self,
         interpret: &mut Interpreter,
-        arguments: Vec<Object>,
+        arguments: &[Object],
     ) -> Result<Object, RuntimeInterrupt> {
         // Every call needs a new environment (i.e. "stack"). If we keep one stack for
         // all calls, subsequent calls will override each others' parameters.

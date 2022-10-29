@@ -86,7 +86,7 @@ impl Interpreter {
                     args.push(self.evaluate_expr(arg)?);
                 }
 
-                callable.call(self, args)
+                callable.call(self, args.as_ref())
             }
             Object::Class(class) => {
                 let arity = class.borrow().arity();
@@ -103,7 +103,7 @@ impl Interpreter {
                     args.push(self.evaluate_expr(arg)?);
                 }
 
-                Class::construct(class, args, self).map(Object::Instance)
+                Class::construct(class, args.as_ref(), self).map(Object::Instance)
             }
             _ => Err(RuntimeInterrupt::error(line, "Can only call functions and classes")),
         }
