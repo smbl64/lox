@@ -52,7 +52,10 @@ fn get_all_files() -> Vec<walkdir::DirEntry> {
 }
 
 fn should_skip(filename: &str) -> bool {
-    let skip_list = vec!["benchmark/"];
+    // We don't run benchmarks as part of the tests. Also, tests in 'limit' are Java
+    // specific and need changes. For example, there is no "Stack overflow"
+    // exception in Rust and we need to deal with Rust's stack overflow panics.
+    let skip_list = vec!["benchmark/", "limit/"];
 
     for s in skip_list {
         if filename.contains(s) {

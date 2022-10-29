@@ -92,9 +92,15 @@ impl Lox {
         match parser.parse() {
             None => return Ok(()),
             Some(stmts) => {
+                if self.error_reporter.borrow().had_error {
+                    return Ok(());
+                }
+
                 let mut resolver = Resolver::new(&mut self.interpreter);
-                if let Err(e) = resolver.resolve(&stmts) {
-                    self.error_reporter.borrow_mut().resolver_error(&e);
+                if let Err(errors) = resolver.resolve(&stmts) {
+                    for e in errors {
+                        self.error_reporter.borrow_mut().resolver_error(&e);
+                    }
                     return Ok(());
                 }
 

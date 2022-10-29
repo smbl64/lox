@@ -41,12 +41,40 @@ impl<'i> Resolver<'i> {
     }
 }
 
-impl<'a> Resolver<'a> {
-    fn visit_stmt(&mut self, input: &Stmt) -> Result<(), ResolverError> {
+impl<'i> Resolver<'i> {
+    pub fn resolve<I, R>(&mut self, statements: I) -> Result<(), Vec<ResolverError>>
+    where
+        I: IntoIterator<Item = R>,
+        R: AsRef<Stmt>,
+    {
+        let mut errors = vec![];
+        for stmt in statements {
+            let res = self.resolve_single_stmt(stmt.as_ref());
+            if res.is_err() {
+                errors.push(res.err().unwrap());
+            }
+        }
+
+        if errors.is_empty() { Ok(()) } else { Err(errors) }
+    }
+
+    fn resolve_block<I, R>(&mut self, statements: I) -> Result<(), ResolverError>
+    where
+        I: IntoIterator<Item = R>,
+        R: AsRef<Stmt>,
+    {
+        for stmt in statements {
+            self.resolve_single_stmt(stmt.as_ref())?;
+        }
+
+        Ok(())
+    }
+
+    fn resolve_single_stmt(&mut self, input: &Stmt) -> Result<(), ResolverError> {
         match input {
             Stmt::Block { statements } => {
                 self.begin_scope();
-                self.resolve(statements)?;
+                self.resolve_block(statements)?;
                 self.end_scope();
 
                 Ok(())
@@ -226,22 +254,6 @@ impl<'a> Resolver<'a> {
         Some(self.scopes.get_mut(last_idx).unwrap())
     }
 
-    pub fn resolve<I, R>(&mut self, statements: I) -> Result<(), ResolverError>
-    where
-        I: IntoIterator<Item = R>,
-        R: AsRef<Stmt>,
-    {
-        for stmt in statements {
-            self.resolve_single_stmt(stmt.as_ref())?;
-        }
-
-        Ok(())
-    }
-
-    fn resolve_single_stmt(&mut self, stmt: &Stmt) -> Result<(), ResolverError> {
-        self.visit_stmt(stmt)
-    }
-
     fn resolve_expr(&mut self, expr: &Expr) -> Result<(), ResolverError> {
         self.visit_expr(expr)
     }
@@ -272,7 +284,7 @@ impl<'a> Resolver<'a> {
                 self.define(param);
             }
 
-            self.resolve(body)?;
+            self.resolve_block(body)?;
             self.end_scope();
             self.current_function = enclosing_func;
             Ok(())
@@ -349,9 +361,7 @@ impl<'a> Resolver<'a> {
             }
         }
     }
-}
 
-impl<'a> Resolver<'a> {
     fn resolve_local(&mut self, input: &Expr, name: &Token) -> Result<(), ResolverError> {
         for (i, scope) in self.scopes.iter().enumerate().rev() {
             if scope.contains_key(&name.lexeme) {

@@ -21,7 +21,13 @@ impl Parser {
     pub fn parse(&mut self) -> Option<Vec<Stmt>> {
         let mut statements = vec![];
         while !self.is_at_end() {
-            statements.push(self.declaration()?);
+            // We won't stop if the return value is None. Error reporter
+            // keeps track of any error that happens and Lox won't go to next stages.
+            // Also, we have the `synchronize` mechanism which helps us to get out of
+            // errornous state in statements and move to the next one.
+            if let Some(s) = self.declaration() {
+                statements.push(s);
+            }
         }
 
         Some(statements)
