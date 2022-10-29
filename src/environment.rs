@@ -38,7 +38,7 @@ impl Environment {
 
             return Err(RuntimeInterrupt::error(
                 name.line,
-                format!("Undefined variable '{}'", name.lexeme),
+                format!("Undefined variable '{}'.", name.lexeme),
             ));
         }
 
@@ -59,7 +59,7 @@ impl Environment {
         match self.ancestor(distance) {
             None => Err(RuntimeInterrupt::error(
                 name.line,
-                format!("No enclosing environment at {distance} for '{}'", name.lexeme),
+                format!("No enclosing environment at {distance} for '{}'.", name.lexeme),
             )),
             Some(ancestor) => ancestor.borrow_mut().assign(name, value),
         }
@@ -74,7 +74,7 @@ impl Environment {
         }
 
         value.ok_or_else(|| {
-            RuntimeInterrupt::error(name.line, format!("Undefined variable '{}'", name.lexeme))
+            RuntimeInterrupt::error(name.line, format!("Undefined variable '{}'.", name.lexeme))
         })
     }
 
@@ -86,7 +86,7 @@ impl Environment {
         match self.ancestor(distance) {
             None => Err(RuntimeInterrupt::error(
                 name.line,
-                format!("No enclosing environment at {distance} for '{}'", name.lexeme),
+                format!("No enclosing environment at {distance} for '{}'.", name.lexeme),
             )),
             Some(ancestor) => ancestor.borrow().get(name),
         }

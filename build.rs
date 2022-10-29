@@ -21,6 +21,7 @@ fn main() {
     let mut buf = BufWriter::new(file);
 
     println!("cargo:rerun-if-changed=build.rs");
+    println!("cargo:rerun-if-changed=./tests/test_runner.rs");
     println!("cargo:rerun-if-changed={TEST_DATA}");
 
     for entry in get_all_files() {

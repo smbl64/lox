@@ -25,7 +25,7 @@ impl Interpreter {
                 if let Object::Instance(ref instance) = object {
                     instance.borrow().get(name, &object)
                 } else {
-                    Err(RuntimeInterrupt::error(name.line, "Only instances have properties"))
+                    Err(RuntimeInterrupt::error(name.line, "Only instances have properties."))
                 }
             }
             Expr::Set { object, name, value } => {
@@ -36,7 +36,7 @@ impl Interpreter {
                     instance.borrow_mut().set(name, value.clone());
                     Ok(value)
                 } else {
-                    Err(RuntimeInterrupt::error(name.line, "Only instances have properties"))
+                    Err(RuntimeInterrupt::error(name.line, "Only instances have fields."))
                 }
             }
             Expr::Super { keyword, method: method_name } => {
@@ -77,7 +77,11 @@ impl Interpreter {
                 if callable.arity() != arguments.len() {
                     return Err(RuntimeInterrupt::error(
                         line,
-                        format!("Expected {} arguments, got {}", callable.arity(), arguments.len()),
+                        format!(
+                            "Expected {} arguments but got {}.",
+                            callable.arity(),
+                            arguments.len()
+                        ),
                     ));
                 }
                 // Evaluate all arguments
@@ -93,7 +97,7 @@ impl Interpreter {
                 if arity != arguments.len() {
                     return Err(RuntimeInterrupt::error(
                         line,
-                        format!("Expected {} arguments, got {}", arity, arguments.len()),
+                        format!("Expected {} arguments but got {}.", arity, arguments.len()),
                     ));
                 }
 
@@ -105,7 +109,7 @@ impl Interpreter {
 
                 Class::construct(class, args.as_ref(), self).map(Object::Instance)
             }
-            _ => Err(RuntimeInterrupt::error(line, "Can only call functions and classes")),
+            _ => Err(RuntimeInterrupt::error(line, "Can only call functions and classes.")),
         }
     }
 
@@ -133,7 +137,7 @@ impl Interpreter {
         } else {
             Err(RuntimeInterrupt::error(
                 method_name.line,
-                format!("Undefined property '{}'", method_name.lexeme),
+                format!("Undefined property '{}'.", method_name.lexeme),
             ))
         }
     }
@@ -145,7 +149,7 @@ impl Interpreter {
                 if let Object::Number(n) = value {
                     Ok(Object::Number(-n))
                 } else {
-                    Err(RuntimeInterrupt::error(operator.line, "Operand must be a number"))
+                    Err(RuntimeInterrupt::error(operator.line, "Operand must be a number."))
                 }
             }
             TokenType::Bang => Ok(Object::Boolean(!self.is_truthy(&value))),
@@ -173,7 +177,7 @@ impl Interpreter {
                 } else {
                     Err(RuntimeInterrupt::error(
                         operator.line,
-                        "Operands must be two numbers or two strings",
+                        "Operands must be two numbers or two strings.",
                     ))
                 }
             }
@@ -216,7 +220,7 @@ impl Interpreter {
         if let (Some(l), Some(r)) = (left.number(), right.number()) {
             Ok((l, r))
         } else {
-            Err(RuntimeInterrupt::error(operator.line, "Operands must be numbers"))
+            Err(RuntimeInterrupt::error(operator.line, "Operands must be numbers."))
         }
     }
 

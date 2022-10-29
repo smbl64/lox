@@ -81,7 +81,7 @@ impl Instance {
         } else {
             Err(RuntimeInterrupt::error(
                 field.line,
-                format!("Undefined property '{}'", field.lexeme),
+                format!("Undefined property '{}'.", field.lexeme),
             ))
         }
     }

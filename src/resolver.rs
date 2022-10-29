@@ -74,7 +74,7 @@ impl<'a> Resolver<'a> {
                         if super_name.lexeme == name.lexeme {
                             return ResolverError::new(
                                 Some(super_name.clone()),
-                                "A class can't inherit from itself",
+                                "A class can't inherit from itself.",
                             );
                         }
                     } else {
@@ -101,7 +101,10 @@ impl<'a> Resolver<'a> {
                         _ => {
                             // This should not happen if the parser
                             // does its job properly!
-                            return ResolverError::new(None, "Method must be a function statement");
+                            return ResolverError::new(
+                                None,
+                                "Method must be a function statement.",
+                            );
                         }
                     };
 
@@ -150,7 +153,7 @@ impl<'a> Resolver<'a> {
                 if self.current_function == FunctionType::None {
                     return ResolverError::new(
                         Some(keyword.clone()),
-                        "Can't return from top-level code",
+                        "Can't return from top-level code.",
                     );
                 }
 
@@ -159,7 +162,7 @@ impl<'a> Resolver<'a> {
                     if self.current_function == FunctionType::Initializer {
                         return ResolverError::new(
                             Some(keyword.clone()),
-                            "Can't return a value from an initializer",
+                            "Can't return a value from an initializer.",
                         );
                     }
                     self.resolve_expr(expr)?;
@@ -247,7 +250,7 @@ impl<'a> Resolver<'a> {
         if self.current_class == ClassType::None {
             return ResolverError::new(
                 Some(keyword.clone()),
-                "Can't use 'this' outside of a class",
+                "Can't use 'this' outside of a class.",
             );
         }
 
@@ -274,7 +277,7 @@ impl<'a> Resolver<'a> {
             self.current_function = enclosing_func;
             Ok(())
         } else {
-            ResolverError::new(None, "Expected a function")
+            ResolverError::new(None, "Expected a function.")
         }
     }
 }
@@ -290,7 +293,7 @@ impl<'a> Resolver<'a> {
                     if let Some(false) = scope.get(&name.lexeme) {
                         return ResolverError::new(
                             Some(name.clone()),
-                            "Can't read local variable in its own initialization",
+                            "Can't read local variable in its own initializer.",
                         );
                     }
                 }
@@ -305,12 +308,12 @@ impl<'a> Resolver<'a> {
                 if self.current_class == ClassType::None {
                     ResolverError::new(
                         Some(keyword.clone()),
-                        "Can't use 'super' outside of a class",
+                        "Can't use 'super' outside of a class.",
                     )
                 } else if self.current_class != ClassType::SubClass {
                     ResolverError::new(
                         Some(keyword.clone()),
-                        "Can't use 'super' in a class without superclass",
+                        "Can't use 'super' in a class with no superclass.",
                     )
                 } else {
                     self.resolve_local(input, keyword)
@@ -376,8 +379,10 @@ impl ResolverError {
 impl Display for ResolverError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.token {
-            Some(token) => write!(f, "[line {}] {}", token.line, self.msg),
-            None => write!(f, "[line ?] {}", self.msg),
+            Some(token) => {
+                write!(f, "[line {}] Error at '{}': {}", token.line, token.lexeme, self.msg)
+            }
+            None => write!(f, "{}", self.msg),
         }
     }
 }

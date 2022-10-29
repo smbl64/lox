@@ -121,7 +121,7 @@ impl Interpreter {
                     if let Expr::Variable { name: super_name } = s {
                         return Err(RuntimeInterrupt::error(
                             super_name.line,
-                            "Superclass must be a class",
+                            "Superclass must be a class.",
                         ));
                     } else {
                         panic!("Superclass is not enclosed in a Expr::Variable!");

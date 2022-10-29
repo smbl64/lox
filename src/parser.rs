@@ -47,12 +47,12 @@ impl Parser {
     }
 
     fn var_declaration(&mut self) -> Option<Stmt> {
-        let name = self.consume(TokenType::Identifier, "Expect variable name")?;
+        let name = self.consume(TokenType::Identifier, "Expect variable name.")?;
 
         let initializer =
             if self.match_tt(&[TokenType::Equal]) { Some(self.expression()?) } else { None };
 
-        self.consume(TokenType::Semicolon, "Expect ';' after variable declaration")?;
+        self.consume(TokenType::Semicolon, "Expect ';' after variable declaration.")?;
 
         Some(Stmt::Var { name, initializer })
     }
@@ -60,44 +60,44 @@ impl Parser {
     fn class(&mut self) -> Option<Stmt> {
         let name = self.consume(TokenType::Identifier, "Expect class name")?;
         let superclass = if self.match_tt(&[TokenType::Less]) {
-            let super_class = self.consume(TokenType::Identifier, "Expect super class name")?;
+            let super_class = self.consume(TokenType::Identifier, "Expect superclass name.")?;
             Some(Expr::Variable { name: super_class })
         } else {
             None
         };
 
-        self.consume(TokenType::LeftBrace, "Expect '{' before class body")?;
+        self.consume(TokenType::LeftBrace, "Expect '{' before class body.")?;
         let mut methods = vec![];
         while !self.check(&TokenType::RightBrace) && !self.is_at_end() {
             methods.push(self.function("method")?);
         }
 
-        self.consume(TokenType::RightBrace, "Expect '}' after class body")?;
+        self.consume(TokenType::RightBrace, "Expect '}' after class body.")?;
 
         Some(Stmt::Class { name, methods, superclass })
     }
 
     fn function(&mut self, kind: &str) -> Option<Stmt> {
-        let name = self.consume(TokenType::Identifier, format!("Expect {kind} name").as_str())?;
+        let name = self.consume(TokenType::Identifier, format!("Expect {kind} name.").as_str())?;
 
-        self.consume(TokenType::LeftParen, format!("Expect '(' after {kind} name").as_str())?;
+        self.consume(TokenType::LeftParen, format!("Expect '(' after {kind} name.").as_str())?;
 
         let mut parameters = vec![];
         if !self.check(&TokenType::RightParen) {
             loop {
                 if parameters.len() >= 255 {
-                    self.error(self.peek().clone(), "Can't have more than 255 parameters");
+                    self.error(self.peek().clone(), "Can't have more than 255 parameters.");
                 }
 
-                parameters.push(self.consume(TokenType::Identifier, "Expect parameter name")?);
+                parameters.push(self.consume(TokenType::Identifier, "Expect parameter name.")?);
                 if !self.match_tt(&[TokenType::Comma]) {
                     break;
                 }
             }
         }
 
-        self.consume(TokenType::RightParen, "Expect ')' after parameters")?;
-        self.consume(TokenType::LeftBrace, format!("Expect '{{' before {kind} body").as_str())?;
+        self.consume(TokenType::RightParen, "Expect ')' after parameters.")?;
+        self.consume(TokenType::LeftBrace, format!("Expect '{{' before {kind} body.").as_str())?;
 
         let body = self.block()?.into_iter().map(Rc::new).collect::<Vec<_>>();
 
@@ -125,9 +125,9 @@ impl Parser {
     }
 
     fn if_statement(&mut self) -> Option<Stmt> {
-        self.consume(TokenType::LeftParen, "Expect '(' after 'if'")?;
+        self.consume(TokenType::LeftParen, "Expect '(' after 'if'.")?;
         let condition = self.expression()?;
-        self.consume(TokenType::RightParen, "Expect ')' after if condition")?;
+        self.consume(TokenType::RightParen, "Expect ')' after if condition.")?;
 
         let then_branch = Box::new(self.statement()?);
         let else_branch = if self.match_tt(&[TokenType::Else]) {
@@ -143,21 +143,21 @@ impl Parser {
         let keyword = self.previous();
         let value = if self.check(&TokenType::Semicolon) { None } else { Some(self.expression()?) };
 
-        self.consume(TokenType::Semicolon, "Expect ';' after 'return'")?;
+        self.consume(TokenType::Semicolon, "Expect ';' after 'return'.")?;
         Some(Stmt::Return { keyword, value })
     }
 
     fn while_statement(&mut self) -> Option<Stmt> {
-        self.consume(TokenType::LeftParen, "Expect '(' after 'while'")?;
+        self.consume(TokenType::LeftParen, "Expect '(' after 'while'.")?;
         let condition = self.expression()?;
-        self.consume(TokenType::RightParen, "Expect ')' after while condition")?;
+        self.consume(TokenType::RightParen, "Expect ')' after while condition.")?;
 
         let body = Box::new(self.statement()?);
         Some(Stmt::While { condition, body })
     }
 
     fn for_statement(&mut self) -> Option<Stmt> {
-        self.consume(TokenType::LeftParen, "Expect '(' after 'for'")?;
+        self.consume(TokenType::LeftParen, "Expect '(' after 'for'.")?;
 
         let initializer = if self.match_tt(&[TokenType::Semicolon]) {
             None
@@ -172,11 +172,11 @@ impl Parser {
         } else {
             self.expression()?
         };
-        self.consume(TokenType::Semicolon, "Expect ';' after 'for' condition")?;
+        self.consume(TokenType::Semicolon, "Expect ';' after 'for' condition.")?;
 
         let increment =
             if self.check(&TokenType::RightParen) { None } else { Some(self.expression()?) };
-        self.consume(TokenType::RightParen, "Expect ')' after 'for' clauses")?;
+        self.consume(TokenType::RightParen, "Expect ')' after 'for' clauses.")?;
 
         let mut body = self.statement()?;
 
@@ -201,13 +201,13 @@ impl Parser {
             exprs.push(self.expression()?);
         }
 
-        self.consume(TokenType::Semicolon, "Expect ';' after the print statement")?;
+        self.consume(TokenType::Semicolon, "Expect ';' after the print statement.")?;
         Some(Stmt::Print { exprs })
     }
 
     fn break_statement(&mut self) -> Option<Stmt> {
         let token = self.previous();
-        self.consume(TokenType::Semicolon, "Expect ';' after 'break'")?;
+        self.consume(TokenType::Semicolon, "Expect ';' after 'break'.")?;
         Some(Stmt::Break { token })
     }
 
@@ -218,13 +218,13 @@ impl Parser {
             statements.push(self.declaration()?);
         }
 
-        self.consume(TokenType::RightBrace, "Expect '}' after block")?;
+        self.consume(TokenType::RightBrace, "Expect '}' after block.")?;
         Some(statements)
     }
 
     fn expression_statement(&mut self) -> Option<Stmt> {
         let expr = self.expression()?;
-        self.consume(TokenType::Semicolon, "Expect ';' after expression")?;
+        self.consume(TokenType::Semicolon, "Expect ';' after expression.")?;
         Some(Stmt::Expression { expr })
     }
 
@@ -245,7 +245,7 @@ impl Parser {
                 return Some(Expr::Set { object, name, value });
             }
 
-            self.error(equals, "Invalid assignment target");
+            self.error(equals, "Invalid assignment target.");
         }
 
         Some(expr)
@@ -341,7 +341,8 @@ impl Parser {
             if self.match_tt(&[TokenType::LeftParen]) {
                 expr = self.finish_call(expr)?;
             } else if self.match_tt(&[TokenType::Dot]) {
-                let name = self.consume(TokenType::Identifier, "Expect property name after '.'")?;
+                let name =
+                    self.consume(TokenType::Identifier, "Expect property name after '.'.")?;
                 expr = Expr::Get { object: Box::new(expr), name };
             } else {
                 break;
@@ -358,7 +359,7 @@ impl Parser {
             loop {
                 if arguments.len() >= 255 {
                     // Just report the error, but don't return None yet
-                    self.error(self.peek().clone(), "Can't have more than 255 arguments");
+                    self.error(self.peek().clone(), "Can't have more than 255 arguments.");
                 }
 
                 arguments.push(self.expression()?);
@@ -369,7 +370,7 @@ impl Parser {
             }
         }
 
-        let paren = self.consume(TokenType::RightParen, "Expect ')' after arguments")?;
+        let paren = self.consume(TokenType::RightParen, "Expect ')' after arguments.")?;
         Some(Expr::Call { callee: Box::new(callee), paren, arguments })
     }
 
@@ -383,8 +384,8 @@ impl Parser {
 
         if self.match_tt(&[TokenType::Super]) {
             let keyword = self.previous();
-            self.consume(TokenType::Dot, "Expect '.' after super")?;
-            let method = self.consume(TokenType::Identifier, "Expect superclass method name")?;
+            self.consume(TokenType::Dot, "Expect '.' after 'super'.")?;
+            let method = self.consume(TokenType::Identifier, "Expect superclass method name.")?;
             return Some(Expr::Super { keyword, method });
         }
 
@@ -394,7 +395,7 @@ impl Parser {
 
         if self.match_tt(&[TokenType::Number, TokenType::StringLiteral]) {
             return Some(Expr::Literal {
-                value: self.previous().literal.expect("expecting a number or string here"),
+                value: self.previous().literal.expect("expecting a number or string here."),
             });
         }
 

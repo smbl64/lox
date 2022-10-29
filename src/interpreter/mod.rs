@@ -1,9 +1,7 @@
 mod expr;
 mod stmt;
 
-use std::cell::RefCell;
 use std::collections::HashMap;
-use std::rc::Rc;
 
 use crate::prelude::*;
 use crate::SharedErrorReporter;
@@ -11,8 +9,8 @@ use crate::SharedErrorReporter;
 type InterpreterResult = Result<Object, RuntimeInterrupt>;
 
 pub struct Interpreter {
-    pub globals: Rc<RefCell<Environment>>,
-    environment: Rc<RefCell<Environment>>,
+    pub globals: Shared<Environment>,
+    environment: Shared<Environment>,
     locals: HashMap<UniqueId, usize>, // unique id -> depth
     error_reporter: Option<SharedErrorReporter>,
 }

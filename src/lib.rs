@@ -34,6 +34,7 @@ use std::io::Write;
 use std::rc::Rc;
 
 use prelude::{Interpreter, Parser, Resolver, RuntimeInterrupt};
+use resolver::ResolverError;
 
 pub type Shared<T> = Rc<RefCell<T>>;
 pub type SharedErrorReporter = Shared<ErrorReporter>;
@@ -93,9 +94,10 @@ impl Lox {
             Some(stmts) => {
                 let mut resolver = Resolver::new(&mut self.interpreter);
                 if let Err(e) = resolver.resolve(&stmts) {
-                    // TODO any way to pass this error directly upwards?
-                    return Err(anyhow::anyhow!("{}", e));
+                    self.error_reporter.borrow_mut().resolver_error(&e);
+                    return Ok(());
                 }
+
                 self.interpreter.interpret(&stmts);
             }
         }
@@ -116,12 +118,22 @@ impl ErrorReporter {
     }
 
     pub fn report(&mut self, line: i32, location: &str, message: &str) {
-        eprintln!("[line {line}] Error {location}: {message}");
+        if location.is_empty() {
+            eprintln!("[line {line}] Error: {message}");
+        } else {
+            eprintln!("[line {line}] Error {location}: {message}");
+        }
+
         self.had_error = true;
     }
 
     pub fn runtime_error(&mut self, e: &RuntimeInterrupt) {
         eprintln!("{e}");
         self.had_runtime_error = true;
+    }
+
+    pub fn resolver_error(&mut self, e: &ResolverError) {
+        eprintln!("{e}");
+        self.had_error = true;
     }
 }
