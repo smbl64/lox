@@ -29,8 +29,8 @@ impl Interpreter {
                 }
             }
             Expr::Set { object, name, value } => {
-                let value = self.evaluate_expr(value)?;
                 let object = self.evaluate_expr(object)?;
+                let value = self.evaluate_expr(value)?;
 
                 if let Object::Instance(instance) = object {
                     instance.borrow_mut().set(name, value.clone());
