@@ -1,6 +1,6 @@
 # Lox
 
-[![Build status](https://github.com/smbl64/lox/actions/workflows/test.yml/badge.svg)](https://github.com/smbl64/lox/actions/workflows/test.yml)
+[![Build status](https://github.com/smbl64/lox/actions/workflows/ci.yml/badge.svg)](https://github.com/smbl64/lox/actions/workflows/ci.yml)
 
 A [Lox][lox] interpreter based on the amazing [Crafting Interpreters][book] book.
 
