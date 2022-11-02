@@ -70,7 +70,7 @@ impl Interpreter {
         !matches!(value, Object::Null | Object::Boolean(false))
     }
 
-    fn evaluate_call(&mut self, callee: &Expr, line: i32, arguments: &[Expr]) -> InterpreterResult {
+    fn evaluate_call(&mut self, callee: &Expr, line: u32, arguments: &[Expr]) -> InterpreterResult {
         let callee = self.evaluate_expr(callee)?;
         match callee {
             Object::Callable(callable) => {
@@ -127,7 +127,7 @@ impl Interpreter {
             _ => panic!("Superclass is not wrapped in Object::Class"),
         };
 
-        let this = Token::new(TokenType::Identifier, "this", None, -1);
+        let this = Token::new(TokenType::Identifier, "this", None, u32::MAX);
         let instance = self.environment.borrow().get_at(distance - 1, &this)?;
 
         let method = superclass.borrow().find_method(&method_name.lexeme);

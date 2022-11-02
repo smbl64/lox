@@ -79,7 +79,7 @@ impl Callable for LoxFunction {
         if self.is_initializer
             && (matches!(res, Ok(_)) || matches!(res, Err(RuntimeInterrupt::Return { .. })))
         {
-            let token = Token::new(TokenType::This, "this", None, -1);
+            let token = Token::new(TokenType::This, "this", None, u32::MAX);
             return self.closure.borrow().get_at(0, &token);
         }
 

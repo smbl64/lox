@@ -4,13 +4,13 @@ use crate::object::Object;
 
 #[derive(Debug, PartialEq)]
 pub enum RuntimeInterrupt {
-    Error { line: i32, msg: String },
-    Break { line: i32 },
-    Return { line: i32, value: Object },
+    Error { line: u32, msg: String },
+    Break { line: u32 },
+    Return { line: u32, value: Object },
 }
 
 impl RuntimeInterrupt {
-    pub fn error(line: i32, msg: impl AsRef<str>) -> Self {
+    pub fn error(line: u32, msg: impl AsRef<str>) -> Self {
         Self::Error { line, msg: msg.as_ref().to_owned() }
     }
 }

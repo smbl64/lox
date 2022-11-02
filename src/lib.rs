@@ -119,11 +119,11 @@ pub struct ErrorReporter {
 }
 
 impl ErrorReporter {
-    pub fn error(&mut self, line: i32, message: &str) {
+    pub fn error(&mut self, line: u32, message: &str) {
         self.report(line, "", message);
     }
 
-    pub fn report(&mut self, line: i32, location: &str, message: &str) {
+    pub fn report(&mut self, line: u32, location: &str, message: &str) {
         if location.is_empty() {
             eprintln!("[line {line}] Error: {message}");
         } else {

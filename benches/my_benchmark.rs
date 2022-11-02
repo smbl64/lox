@@ -1,6 +1,11 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use lox::Lox;
 
+fn run_code(src: &str) {
+    let mut lox = Lox::new();
+    lox.run(src).unwrap();
+}
+
 fn fibonacci() {
     let src = r#"
         fun fib(n) {
@@ -11,8 +16,7 @@ fn fibonacci() {
         fib(25);
     "#;
 
-    let mut lox = Lox::new();
-    lox.run(src).unwrap();
+    run_code(src);
 }
 
 fn zoo() {
@@ -47,17 +51,33 @@ fn zoo() {
         }
     "#;
 
-    let mut lox = Lox::new();
-    lox.run(src).unwrap();
+    run_code(src)
 }
 
-fn criterion_benchmark(c: &mut Criterion) {
-    let mut group = c.benchmark_group("my-benchmark");
-    group.sample_size(20);
-    group.bench_function("fib 25", |b| b.iter(fibonacci));
-    group.bench_function("zoo", |b| b.iter(zoo));
-    group.finish();
+fn simple_call() {
+    let src = r#"
+        fun calc(a, b) {
+            return a + b;
+        }
+        var a = 1;
+        var b = 2;
+        var c = calc(a, b);
+    "#;
+
+    run_code(src);
 }
 
-criterion_group!(benches, criterion_benchmark);
+fn fib_benchmark(c: &mut Criterion) {
+    c.bench_function("fib", |b| b.iter(fibonacci));
+}
+
+fn zoo_benchmark(c: &mut Criterion) {
+    c.bench_function("zoo", |b| b.iter(zoo));
+}
+
+fn simple_call_benchmark(c: &mut Criterion) {
+    c.bench_function("simple-call", |b| b.iter(simple_call));
+}
+
+criterion_group!(benches, fib_benchmark, zoo_benchmark, simple_call_benchmark);
 criterion_main!(benches);

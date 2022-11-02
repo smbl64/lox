@@ -7,7 +7,7 @@ pub struct Scanner {
     tokens: Vec<Token>,
     start: usize,
     current: usize,
-    line: i32,
+    line: u32,
     error_reporter: Option<SharedErrorReporter>,
 }
 
@@ -99,7 +99,7 @@ impl Scanner {
         }
     }
 
-    fn error(&self, line: i32, msg: &str) {
+    fn error(&self, line: u32, msg: &str) {
         let reporter = self.error_reporter.as_ref().unwrap();
         let mut reporter = reporter.borrow_mut();
         reporter.error(line, msg);
