@@ -96,24 +96,24 @@ impl Lox {
         };
 
         let mut parser = Parser::new(tokens).with_error_reporting(self.error_reporter.clone());
-        match parser.parse() {
+        let statements = match parser.parse() {
             None => return Ok(()),
-            Some(stmts) => {
-                if self.error_reporter.borrow().had_error {
-                    return Ok(());
-                }
+            Some(stmts) => stmts,
+        };
 
-                let mut resolver = Resolver::new(&mut self.interpreter);
-                if let Err(errors) = resolver.resolve(&stmts) {
-                    for e in errors {
-                        self.error_reporter.borrow_mut().resolver_error(&e);
-                    }
-                    return Ok(());
-                }
-
-                self.interpreter.interpret(&stmts);
-            }
+        if self.error_reporter.borrow().had_error {
+            return Ok(());
         }
+
+        let mut resolver = Resolver::new(&mut self.interpreter);
+        if let Err(errors) = resolver.resolve(&statements) {
+            for e in errors {
+                self.error_reporter.borrow_mut().resolver_error(&e);
+            }
+            return Ok(());
+        }
+
+        self.interpreter.interpret(&statements);
 
         Ok(())
     }
