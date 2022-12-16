@@ -38,17 +38,13 @@ use resolver::ResolverError;
 
 pub type Shared<T> = Rc<RefCell<T>>;
 
-pub struct Lox {
-    interpreter: Interpreter,
-}
+pub struct Lox {}
 
 impl Lox {
     pub fn new() -> Self {
-        Self { interpreter: Interpreter::new() }
+        Self {}
     }
-}
 
-impl Lox {
     pub fn run_file(&mut self, filename: &str) -> Result<(), anyhow::Error> {
         let content = std::fs::read_to_string(filename)?;
 
@@ -56,7 +52,7 @@ impl Lox {
         let tokens = match scanner.scan_tokens() {
             Ok(tokens) => tokens,
             Err(errors) => {
-                self.print_scanner_errors(errors);
+                self.print_scanner_errors(errors.as_ref());
                 return Ok(());
             }
         };
@@ -65,63 +61,57 @@ impl Lox {
         let statements = match parser.parse() {
             Ok(stmts) => stmts,
             Err(errors) => {
-                self.print_parser_errors(errors);
+                self.print_parser_errors(errors.as_ref());
                 return Ok(());
             }
         };
 
-        let mut resolver = Resolver::new(&mut self.interpreter);
+        let mut interpreter = Interpreter::new();
+        let mut resolver = Resolver::new(&mut interpreter);
         if let Err(errors) = resolver.resolve(&statements) {
-            self.print_resolver_errors(errors);
+            self.print_resolver_errors(errors.as_ref());
             return Ok(());
         }
 
-        if let Err(errors) = self.interpreter.interpret(&statements) {
-            self.print_interpreter_errors(errors);
+        if let Err(errors) = interpreter.interpret(&statements) {
+            self.print_interpreter_errors(errors.as_ref());
             return Ok(());
         }
 
         Ok(())
     }
 
-    fn print_scanner_errors(&mut self, errors: Vec<scanner::ScannerError>) {
-        errors.iter().for_each(|e| self.error(e.line, &e.message));
+    fn print_scanner_errors(&mut self, errors: &[scanner::ScannerError]) {
+        errors.iter().for_each(|e| self.error(e.line, "", &e.message));
     }
 
-    fn print_parser_errors(&mut self, errors: Vec<parser::ParserError>) {
+    fn print_parser_errors(&mut self, errors: &[parser::ParserError]) {
         for e in errors {
             if e.token.token_type == TokenType::EOF {
-                self.report(e.token.line, "at end", &e.message);
+                self.error(e.token.line, "at end", &e.message);
             } else {
-                self.report(e.token.line, &format!("at '{}'", e.token.lexeme), &e.message);
+                self.error(e.token.line, &format!("at '{}'", e.token.lexeme), &e.message);
             }
         }
     }
 
-    fn error(&mut self, line: u32, message: &str) {
-        self.report(line, "", message);
+    fn print_resolver_errors(&mut self, errors: &[ResolverError]) {
+        for e in errors {
+            eprintln!("{e}");
+        }
     }
 
-    fn report(&mut self, line: u32, location: &str, message: &str) {
+    fn print_interpreter_errors(&self, errors: &[interpreter::InterpreterError]) {
+        for e in errors {
+            eprintln!("[line {}] {}", e.line, e.message);
+        }
+    }
+
+    fn error(&mut self, line: u32, location: &str, message: &str) {
         if location.is_empty() {
             eprintln!("[line {line}] Error: {message}");
         } else {
             eprintln!("[line {line}] Error {location}: {message}");
-        }
-    }
-    fn resolver_error(&mut self, e: &ResolverError) {
-        eprintln!("{e}");
-    }
-
-    fn print_resolver_errors(&mut self, errors: Vec<ResolverError>) {
-        for e in errors {
-            self.resolver_error(&e);
-        }
-    }
-
-    fn print_interpreter_errors(&self, errors: Vec<interpreter::InterpreterError>) {
-        for e in errors {
-            eprintln!("[line {}] {}", e.line, e.message);
         }
     }
 }

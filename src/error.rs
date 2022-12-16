@@ -4,8 +4,11 @@ use crate::object::Object;
 
 #[derive(Debug, PartialEq)]
 pub enum RuntimeInterrupt {
+    /// A runtime error has occured.
     Error { line: u32, msg: String },
+    /// A break statement has been reached.
     Break { line: u32 },
+    /// A return statement has been reached.
     Return { line: u32, value: Object },
 }
 
