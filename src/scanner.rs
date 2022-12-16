@@ -29,7 +29,7 @@ impl Scanner {
         }
     }
 
-    pub fn scan_tokens(&mut self) -> (Vec<Token>, Vec<ScannerError>) {
+    pub fn scan_tokens(&mut self) -> Result<Vec<Token>, Vec<ScannerError>> {
         while !self.is_at_end() {
             self.start = self.current;
             self.scan_token();
@@ -37,9 +37,11 @@ impl Scanner {
 
         self.tokens.push(Token::new(TokenType::EOF, "", None, self.line));
 
-        // Take our temporary tokens out. It will be replaced by the default()
-        // value for the vector
-        (std::mem::take(&mut self.tokens), std::mem::take(&mut self.errors))
+        if !self.errors.is_empty() {
+            Err(std::mem::take(&mut self.errors))
+        } else {
+            Ok(std::mem::take(&mut self.tokens))
+        }
     }
 
     fn is_at_end(&self) -> bool {

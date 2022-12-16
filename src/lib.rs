@@ -87,14 +87,12 @@ impl Lox {
     pub fn run(&mut self, input: &str) -> Result<(), anyhow::Error> {
         let mut scanner = scanner::Scanner::new(input);
 
-        let (tokens, errors) = scanner.scan_tokens();
-
-        // Print errors if there are any. We will continue even if there are errors.
-        // This doesn't make sense to me at the moment, but some of the test
-        // cases (from the book author) will fail if we stop with scanner
-        // errors.
-        if !errors.is_empty() {
-            self.print_scanner_errors(errors);
+        let tokens = match scanner.scan_tokens() {
+            Ok(tokens) => tokens,
+            Err(errors) => {
+                self.print_scanner_errors(errors);
+                return Ok(());
+            }
         };
 
         let mut parser = Parser::new(tokens).with_error_reporting(self.error_reporter.clone());
