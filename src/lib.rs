@@ -34,7 +34,6 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use prelude::{Interpreter, Parser, Resolver, RuntimeInterrupt, TokenType};
-use resolver::ResolverError;
 
 pub type Shared<T> = Rc<RefCell<T>>;
 
@@ -50,37 +49,52 @@ impl Lox {
     pub fn run_file(&mut self, filename: &str) -> Result<(), anyhow::Error> {
         let content = std::fs::read_to_string(filename)?;
 
-        let mut scanner = scanner::Scanner::new(&content);
-        let tokens = match scanner.scan_tokens() {
-            Ok(tokens) => tokens,
-            Err(errors) => {
-                self.print_scanner_errors(errors.as_ref());
-                return Err(self.aggregate_errors());
-            }
-        };
-
-        let mut parser = Parser::new(tokens);
-        let statements = match parser.parse() {
-            Ok(stmts) => stmts,
-            Err(errors) => {
-                self.print_parser_errors(errors.as_ref());
-                return Err(self.aggregate_errors());
-            }
-        };
+        let tokens = self.scan(content)?;
+        let statements = self.parse(tokens)?;
 
         let mut interpreter = Interpreter::new();
         let mut resolver = Resolver::new(&mut interpreter);
         if let Err(errors) = resolver.resolve(&statements) {
-            self.print_resolver_errors(errors.as_ref());
+            for e in errors {
+                self.error_messages.push(format!("{e}"));
+            }
             return Err(self.aggregate_errors());
         }
 
         if let Err(errors) = interpreter.interpret(&statements) {
-            self.print_interpreter_errors(errors.as_ref());
+            for e in errors {
+                self.error_messages.push(format!("[line {}] {}", e.line, e.message));
+            }
             return Err(self.aggregate_errors());
         }
 
         Ok(())
+    }
+
+    fn parse(&mut self, tokens: Vec<prelude::Token>) -> Result<Vec<prelude::Stmt>, anyhow::Error> {
+        let mut parser = Parser::new(tokens);
+        parser.parse().or_else(|errors| {
+            self.add_parse_errors(errors);
+            return Err(self.aggregate_errors());
+        })
+    }
+
+    fn add_parse_errors(&mut self, errors: Vec<prelude::ParserError>) {
+        for e in errors {
+            if e.token.token_type == TokenType::EOF {
+                self.add_error(e.token.line, "at end", &e.message);
+            } else {
+                self.add_error(e.token.line, &format!("at '{}'", e.token.lexeme), &e.message);
+            }
+        }
+    }
+
+    fn scan(&mut self, content: String) -> Result<Vec<prelude::Token>, anyhow::Error> {
+        let mut scanner = scanner::Scanner::new(&content);
+        scanner.scan_tokens().or_else(|errors| {
+            errors.iter().for_each(|e| self.add_error(e.line, "", &e.message));
+            return Err(self.aggregate_errors());
+        })
     }
 
     fn aggregate_errors(&mut self) -> anyhow::Error {
@@ -89,33 +103,7 @@ impl Lox {
         res
     }
 
-    fn print_scanner_errors(&mut self, errors: &[scanner::ScannerError]) {
-        errors.iter().for_each(|e| self.error(e.line, "", &e.message));
-    }
-
-    fn print_parser_errors(&mut self, errors: &[parser::ParserError]) {
-        for e in errors {
-            if e.token.token_type == TokenType::EOF {
-                self.error(e.token.line, "at end", &e.message);
-            } else {
-                self.error(e.token.line, &format!("at '{}'", e.token.lexeme), &e.message);
-            }
-        }
-    }
-
-    fn print_resolver_errors(&mut self, errors: &[ResolverError]) {
-        for e in errors {
-            self.error_messages.push(format!("{e}"));
-        }
-    }
-
-    fn print_interpreter_errors(&mut self, errors: &[interpreter::InterpreterError]) {
-        for e in errors {
-            self.error_messages.push(format!("[line {}] {}", e.line, e.message));
-        }
-    }
-
-    fn error(&mut self, line: u32, location: &str, message: &str) {
+    fn add_error(&mut self, line: u32, location: &str, message: &str) {
         if location.is_empty() {
             self.error_messages.push(format!("[line {line}] Error: {message}"));
         } else {
