@@ -1,8 +1,10 @@
 use crate::prelude::*;
 
+#[allow(unused)]
 pub struct AstPrinter;
 
 impl AstPrinter {
+    #[allow(unused)]
     pub fn to_string(expr: &Expr) -> String {
         match expr {
             Expr::Binary { left, operator, right } => {

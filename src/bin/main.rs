@@ -11,10 +11,10 @@ fn main() -> Result<(), anyhow::Error> {
             let filename = args.pop().unwrap();
             lox.run_file(filename.as_ref())
         }
-        2.. => {
-            println!("Usage: rlox [script]");
+        _ => {
+            let bin_name = env!("CARGO_BIN_NAME");
+            println!("Usage: {} [script]", bin_name);
             std::process::exit(64);
         }
-        _ => lox.run_prompt(),
     }
 }

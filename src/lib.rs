@@ -31,7 +31,6 @@ pub mod prelude {
 }
 
 use std::cell::RefCell;
-use std::io::Write;
 use std::rc::Rc;
 
 use prelude::{Interpreter, Parser, Resolver, RuntimeInterrupt};
@@ -64,24 +63,6 @@ impl Lox {
         //// Indicate an error in the exit code.
         //if (hadError) System.exit(65);
         //if (hadRuntimeError) System.exit(70);
-    }
-
-    pub fn run_prompt(&mut self) -> Result<(), anyhow::Error> {
-        let reader = std::io::stdin();
-
-        loop {
-            print!("> ");
-            std::io::stdout().flush().expect("failed to flush stdout");
-
-            let mut line = String::new();
-            let n = reader.read_line(&mut line)?;
-            if n == 0 {
-                return Ok(());
-            }
-            let line = line.trim_end();
-            // Ignore errors in the prompt mode
-            let _ = self.run(line);
-        }
     }
 
     pub fn run(&mut self, input: &str) -> Result<(), anyhow::Error> {
