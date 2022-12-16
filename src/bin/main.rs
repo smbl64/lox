@@ -15,5 +15,6 @@ fn main() {
     let filename = args.pop().unwrap();
     if let Err(e) = lox.run_file(filename.as_ref()) {
         eprintln!("{e}");
+        std::process::exit(1);
     }
 }

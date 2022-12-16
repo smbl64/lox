@@ -38,11 +38,13 @@ use resolver::ResolverError;
 
 pub type Shared<T> = Rc<RefCell<T>>;
 
-pub struct Lox {}
+pub struct Lox {
+    error_messages: Vec<String>,
+}
 
 impl Lox {
     pub fn new() -> Self {
-        Self {}
+        Self { error_messages: Vec::new() }
     }
 
     pub fn run_file(&mut self, filename: &str) -> Result<(), anyhow::Error> {
@@ -53,7 +55,7 @@ impl Lox {
             Ok(tokens) => tokens,
             Err(errors) => {
                 self.print_scanner_errors(errors.as_ref());
-                return Ok(());
+                return Err(self.aggregate_errors());
             }
         };
 
@@ -62,7 +64,7 @@ impl Lox {
             Ok(stmts) => stmts,
             Err(errors) => {
                 self.print_parser_errors(errors.as_ref());
-                return Ok(());
+                return Err(self.aggregate_errors());
             }
         };
 
@@ -70,15 +72,19 @@ impl Lox {
         let mut resolver = Resolver::new(&mut interpreter);
         if let Err(errors) = resolver.resolve(&statements) {
             self.print_resolver_errors(errors.as_ref());
-            return Ok(());
+            return Err(self.aggregate_errors());
         }
 
         if let Err(errors) = interpreter.interpret(&statements) {
             self.print_interpreter_errors(errors.as_ref());
-            return Ok(());
+            return Err(self.aggregate_errors());
         }
 
         Ok(())
+    }
+
+    fn aggregate_errors(&self) -> anyhow::Error {
+        anyhow::anyhow!(self.error_messages.join("\n"))
     }
 
     fn print_scanner_errors(&mut self, errors: &[scanner::ScannerError]) {
@@ -97,21 +103,21 @@ impl Lox {
 
     fn print_resolver_errors(&mut self, errors: &[ResolverError]) {
         for e in errors {
-            eprintln!("{e}");
+            self.error_messages.push(format!("{e}"));
         }
     }
 
-    fn print_interpreter_errors(&self, errors: &[interpreter::InterpreterError]) {
+    fn print_interpreter_errors(&mut self, errors: &[interpreter::InterpreterError]) {
         for e in errors {
-            eprintln!("[line {}] {}", e.line, e.message);
+            self.error_messages.push(format!("[line {}] {}", e.line, e.message));
         }
     }
 
     fn error(&mut self, line: u32, location: &str, message: &str) {
         if location.is_empty() {
-            eprintln!("[line {line}] Error: {message}");
+            self.error_messages.push(format!("[line {line}] Error: {message}"));
         } else {
-            eprintln!("[line {line}] Error {location}: {message}");
+            self.error_messages.push(format!("[line {line}] Error {location}: {message}"));
         }
     }
 }
