@@ -58,16 +58,8 @@ impl Lox {
 impl Lox {
     pub fn run_file(&mut self, filename: &str) -> Result<(), anyhow::Error> {
         let content = std::fs::read_to_string(filename)?;
-        self.run(content.as_ref())
-        // TODO
-        //// Indicate an error in the exit code.
-        //if (hadError) System.exit(65);
-        //if (hadRuntimeError) System.exit(70);
-    }
 
-    fn run(&mut self, input: &str) -> Result<(), anyhow::Error> {
-        let mut scanner = scanner::Scanner::new(input);
-
+        let mut scanner = scanner::Scanner::new(&content);
         let tokens = match scanner.scan_tokens() {
             Ok(tokens) => tokens,
             Err(errors) => {
@@ -85,15 +77,9 @@ impl Lox {
             }
         };
 
-        if self.error_reporter.borrow().had_error {
-            return Ok(());
-        }
-
         let mut resolver = Resolver::new(&mut self.interpreter);
         if let Err(errors) = resolver.resolve(&statements) {
-            for e in errors {
-                self.error_reporter.borrow_mut().resolver_error(&e);
-            }
+            self.print_resolver_errors(errors);
             return Ok(());
         }
 
@@ -116,6 +102,13 @@ impl Lox {
             } else {
                 reporter.report(e.token.line, &format!("at '{}'", e.token.lexeme), &e.message);
             }
+        }
+    }
+
+    fn print_resolver_errors(&mut self, errors: Vec<ResolverError>) {
+        let mut reporter = self.error_reporter.borrow_mut();
+        for e in errors {
+            reporter.resolver_error(&e);
         }
     }
 }
