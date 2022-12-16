@@ -83,8 +83,10 @@ impl Lox {
         Ok(())
     }
 
-    fn aggregate_errors(&self) -> anyhow::Error {
-        anyhow::anyhow!(self.error_messages.join("\n"))
+    fn aggregate_errors(&mut self) -> anyhow::Error {
+        let res = anyhow::anyhow!(self.error_messages.join("\n"));
+        self.error_messages.clear();
+        res
     }
 
     fn print_scanner_errors(&mut self, errors: &[scanner::ScannerError]) {
