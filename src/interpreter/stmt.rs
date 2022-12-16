@@ -5,12 +5,14 @@ use std::rc::Rc;
 use crate::prelude::*;
 
 impl Interpreter {
-    pub fn interpret(&mut self, statements: &[Stmt]) {
+    pub fn interpret(&mut self, statements: &[Stmt]) -> Result<(), Vec<InterpreterError>> {
         for stmt in statements {
             if let Err(e) = self.execute(stmt) {
                 self.runtime_error(e);
             }
         }
+
+        if !self.errors.is_empty() { Err(std::mem::take(&mut self.errors)) } else { Ok(()) }
     }
 
     pub fn execute_block<I, R>(
@@ -198,12 +200,12 @@ impl Interpreter {
         Ok(())
     }
 
-    fn runtime_error(&self, e: RuntimeInterrupt) {
-        if self.error_reporter.is_none() {
-            return;
+    fn runtime_error(&mut self, e: RuntimeInterrupt) {
+        match e {
+            RuntimeInterrupt::Error { line, msg } => {
+                self.errors.push(InterpreterError { line, message: msg })
+            }
+            _ => panic!("Invalid runtime interrupt in this context"),
         }
-        let reporter = self.error_reporter.as_ref().unwrap();
-        let mut reporter = reporter.borrow_mut();
-        reporter.runtime_error(&e);
     }
 }

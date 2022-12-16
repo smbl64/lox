@@ -4,15 +4,19 @@ mod stmt;
 use std::collections::HashMap;
 
 use crate::prelude::*;
-use crate::SharedErrorReporter;
 
 type InterpreterResult = Result<Object, RuntimeInterrupt>;
+
+pub struct InterpreterError {
+    pub line: u32,
+    pub message: String,
+}
 
 pub struct Interpreter {
     pub globals: Shared<Environment>,
     environment: Shared<Environment>,
     locals: HashMap<UniqueId, usize>, // unique id -> depth
-    error_reporter: Option<SharedErrorReporter>,
+    errors: Vec<InterpreterError>,
 }
 
 impl Interpreter {
@@ -22,10 +26,6 @@ impl Interpreter {
 
         globals.borrow_mut().define("clock", Object::Callable(crate::native::clock()));
 
-        Self { globals, environment, locals: HashMap::new(), error_reporter: None }
-    }
-
-    pub fn with_error_reporting(self, error_reporter: SharedErrorReporter) -> Self {
-        Self { error_reporter: Some(error_reporter), ..self }
+        Self { globals, environment, locals: HashMap::new(), errors: Vec::new() }
     }
 }

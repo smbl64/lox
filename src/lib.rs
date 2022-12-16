@@ -37,21 +37,14 @@ use prelude::{Interpreter, Parser, Resolver, RuntimeInterrupt, TokenType};
 use resolver::ResolverError;
 
 pub type Shared<T> = Rc<RefCell<T>>;
-pub type SharedErrorReporter = Shared<ErrorReporter>;
 
 pub struct Lox {
     interpreter: Interpreter,
-    error_reporter: SharedErrorReporter,
 }
 
 impl Lox {
     pub fn new() -> Self {
-        let error_reporter = Rc::new(RefCell::new(ErrorReporter::default()));
-
-        Self {
-            interpreter: Interpreter::new().with_error_reporting(error_reporter.clone()),
-            error_reporter,
-        }
+        Self { interpreter: Interpreter::new() }
     }
 }
 
@@ -83,64 +76,52 @@ impl Lox {
             return Ok(());
         }
 
-        self.interpreter.interpret(&statements);
+        if let Err(errors) = self.interpreter.interpret(&statements) {
+            self.print_interpreter_errors(errors);
+            return Ok(());
+        }
 
         Ok(())
     }
 
     fn print_scanner_errors(&mut self, errors: Vec<scanner::ScannerError>) {
-        let mut reporter = self.error_reporter.borrow_mut();
-        errors.iter().for_each(|e| reporter.error(e.line, &e.message));
+        errors.iter().for_each(|e| self.error(e.line, &e.message));
     }
 
     fn print_parser_errors(&mut self, errors: Vec<parser::ParserError>) {
-        let mut reporter = self.error_reporter.borrow_mut();
-
         for e in errors {
             if e.token.token_type == TokenType::EOF {
-                reporter.report(e.token.line, "at end", &e.message);
+                self.report(e.token.line, "at end", &e.message);
             } else {
-                reporter.report(e.token.line, &format!("at '{}'", e.token.lexeme), &e.message);
+                self.report(e.token.line, &format!("at '{}'", e.token.lexeme), &e.message);
             }
         }
     }
 
-    fn print_resolver_errors(&mut self, errors: Vec<ResolverError>) {
-        let mut reporter = self.error_reporter.borrow_mut();
-        for e in errors {
-            reporter.resolver_error(&e);
-        }
-    }
-}
-
-#[derive(Debug, Default)]
-pub struct ErrorReporter {
-    pub had_error: bool,
-    pub had_runtime_error: bool,
-}
-
-impl ErrorReporter {
-    pub fn error(&mut self, line: u32, message: &str) {
+    fn error(&mut self, line: u32, message: &str) {
         self.report(line, "", message);
     }
 
-    pub fn report(&mut self, line: u32, location: &str, message: &str) {
+    fn report(&mut self, line: u32, location: &str, message: &str) {
         if location.is_empty() {
             eprintln!("[line {line}] Error: {message}");
         } else {
             eprintln!("[line {line}] Error {location}: {message}");
         }
-
-        self.had_error = true;
+    }
+    fn resolver_error(&mut self, e: &ResolverError) {
+        eprintln!("{e}");
     }
 
-    pub fn runtime_error(&mut self, e: &RuntimeInterrupt) {
-        eprintln!("{e}");
-        self.had_runtime_error = true;
+    fn print_resolver_errors(&mut self, errors: Vec<ResolverError>) {
+        for e in errors {
+            self.resolver_error(&e);
+        }
     }
 
-    pub fn resolver_error(&mut self, e: &ResolverError) {
-        eprintln!("{e}");
-        self.had_error = true;
+    fn print_interpreter_errors(&self, errors: Vec<interpreter::InterpreterError>) {
+        for e in errors {
+            eprintln!("[line {}] {}", e.line, e.message);
+        }
     }
 }
