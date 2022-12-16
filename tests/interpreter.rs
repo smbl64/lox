@@ -2,7 +2,7 @@ use lox::prelude::*;
 
 fn make_expression(source: &'static str) -> Expr {
     let mut scanner = Scanner::new(source);
-    let tokens = scanner.scan_tokens();
+    let (tokens, _) = scanner.scan_tokens();
     let mut parser = Parser::new(tokens);
     let stmt = parser
         .parse()

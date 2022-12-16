@@ -1,6 +1,6 @@
 use crate::prelude::*;
-use crate::SharedErrorReporter;
 
+/// Scanner reads the source code and breaks it into tokens.
 #[derive(Debug)]
 pub struct Scanner {
     source_chars: Vec<char>,
@@ -8,7 +8,13 @@ pub struct Scanner {
     start: usize,
     current: usize,
     line: u32,
-    error_reporter: Option<SharedErrorReporter>,
+    errors: Vec<ScannerError>,
+}
+
+#[derive(Debug)]
+pub struct ScannerError {
+    pub line: u32,
+    pub message: String,
 }
 
 impl Scanner {
@@ -19,15 +25,11 @@ impl Scanner {
             current: 0,
             line: 1,
             tokens: Vec::new(),
-            error_reporter: None,
+            errors: Vec::new(),
         }
     }
 
-    pub fn with_error_reporting(self, error_reporter: SharedErrorReporter) -> Self {
-        Self { error_reporter: Some(error_reporter), ..self }
-    }
-
-    pub fn scan_tokens(&mut self) -> Vec<Token> {
+    pub fn scan_tokens(&mut self) -> (Vec<Token>, Vec<ScannerError>) {
         while !self.is_at_end() {
             self.start = self.current;
             self.scan_token();
@@ -37,7 +39,7 @@ impl Scanner {
 
         // Take our temporary tokens out. It will be replaced by the default()
         // value for the vector
-        std::mem::take(&mut self.tokens)
+        (std::mem::take(&mut self.tokens), std::mem::take(&mut self.errors))
     }
 
     fn is_at_end(&self) -> bool {
@@ -99,10 +101,8 @@ impl Scanner {
         }
     }
 
-    fn error(&self, line: u32, msg: &str) {
-        let reporter = self.error_reporter.as_ref().unwrap();
-        let mut reporter = reporter.borrow_mut();
-        reporter.error(line, msg);
+    fn error(&mut self, line: u32, message: &str) {
+        self.errors.push(ScannerError { line, message: message.to_owned() });
     }
 
     fn advance(&mut self) -> char {

@@ -4,7 +4,7 @@ use lox::prelude::Scanner;
 fn scanner_works() {
     let input = "2 and 3";
     let mut scanner = Scanner::new(input);
-    let tokens = scanner.scan_tokens();
+    let (tokens, _) = scanner.scan_tokens();
     assert_eq!(tokens.len(), 4);
 }
 
@@ -18,6 +18,6 @@ fn can_read_unicode() {
         2 and 3
     ";
     let mut scanner = Scanner::new(input);
-    let tokens = scanner.scan_tokens();
+    let (tokens, _) = scanner.scan_tokens();
     assert_eq!(tokens.len(), 4);
 }

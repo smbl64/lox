@@ -10,6 +10,7 @@ mod interpreter;
 mod native;
 mod object;
 mod parser;
+mod printer;
 mod resolver;
 mod scanner;
 mod token;
@@ -84,9 +85,17 @@ impl Lox {
     }
 
     pub fn run(&mut self, input: &str) -> Result<(), anyhow::Error> {
-        let mut scanner =
-            scanner::Scanner::new(input).with_error_reporting(self.error_reporter.clone());
-        let tokens = scanner.scan_tokens();
+        let mut scanner = scanner::Scanner::new(input);
+
+        let (tokens, errors) = scanner.scan_tokens();
+
+        // Print errors if there are any. We will continue even if there are errors.
+        // This doesn't make sense to me at the moment, but some of the test
+        // cases (from the book author) will fail if we stop with scanner
+        // errors.
+        if !errors.is_empty() {
+            self.print_scanner_errors(errors);
+        };
 
         let mut parser = Parser::new(tokens).with_error_reporting(self.error_reporter.clone());
         match parser.parse() {
@@ -109,6 +118,11 @@ impl Lox {
         }
 
         Ok(())
+    }
+
+    fn print_scanner_errors(&mut self, errors: Vec<scanner::ScannerError>) {
+        let mut reporter = self.error_reporter.borrow_mut();
+        errors.iter().for_each(|e| reporter.error(e.line, &e.message));
     }
 }
 
