@@ -1,24 +1,25 @@
 use std::rc::Rc;
 
 use crate::prelude::*;
-use crate::SharedErrorReporter;
 
 pub struct Parser {
     tokens: Vec<Token>,
     current: usize,
-    error_reporter: Option<SharedErrorReporter>,
+    errors: Vec<ParserError>,
+}
+
+#[derive(Debug)]
+pub struct ParserError {
+    pub message: String,
+    pub token: Token,
 }
 
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
-        Self { tokens, current: 0, error_reporter: None }
+        Self { tokens, current: 0, errors: Vec::new() }
     }
 
-    pub fn with_error_reporting(self, error_reporter: SharedErrorReporter) -> Self {
-        Self { error_reporter: Some(error_reporter), ..self }
-    }
-
-    pub fn parse(&mut self) -> Option<Vec<Stmt>> {
+    pub fn parse(&mut self) -> Result<Vec<Stmt>, Vec<ParserError>> {
         let mut statements = vec![];
         while !self.is_at_end() {
             // We won't stop if the return value is None. Error reporter
@@ -30,7 +31,7 @@ impl Parser {
             }
         }
 
-        Some(statements)
+        if !self.errors.is_empty() { Err(std::mem::take(&mut self.errors)) } else { Ok(statements) }
     }
 
     fn declaration(&mut self) -> Option<Stmt> {
@@ -434,18 +435,8 @@ impl Parser {
         None
     }
 
-    fn error(&self, token: Token, message: &str) {
-        if self.error_reporter.is_none() {
-            return;
-        }
-        let reporter = self.error_reporter.as_ref().unwrap();
-        let mut reporter = reporter.borrow_mut();
-
-        if token.token_type == TokenType::EOF {
-            reporter.report(token.line, "at end", message);
-        } else {
-            reporter.report(token.line, &format!("at '{}'", token.lexeme), message);
-        }
+    fn error(&mut self, token: Token, message: &str) {
+        self.errors.push(ParserError { message: message.to_owned(), token });
     }
 
     fn match_tt(&mut self, types: &[TokenType]) -> bool {

@@ -33,7 +33,7 @@ pub mod prelude {
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use prelude::{Interpreter, Parser, Resolver, RuntimeInterrupt};
+use prelude::{Interpreter, Parser, Resolver, RuntimeInterrupt, TokenType};
 use resolver::ResolverError;
 
 pub type Shared<T> = Rc<RefCell<T>>;
@@ -65,7 +65,7 @@ impl Lox {
         //if (hadRuntimeError) System.exit(70);
     }
 
-    pub fn run(&mut self, input: &str) -> Result<(), anyhow::Error> {
+    fn run(&mut self, input: &str) -> Result<(), anyhow::Error> {
         let mut scanner = scanner::Scanner::new(input);
 
         let tokens = match scanner.scan_tokens() {
@@ -76,10 +76,13 @@ impl Lox {
             }
         };
 
-        let mut parser = Parser::new(tokens).with_error_reporting(self.error_reporter.clone());
+        let mut parser = Parser::new(tokens);
         let statements = match parser.parse() {
-            None => return Ok(()),
-            Some(stmts) => stmts,
+            Ok(stmts) => stmts,
+            Err(errors) => {
+                self.print_parser_errors(errors);
+                return Ok(());
+            }
         };
 
         if self.error_reporter.borrow().had_error {
@@ -102,6 +105,18 @@ impl Lox {
     fn print_scanner_errors(&mut self, errors: Vec<scanner::ScannerError>) {
         let mut reporter = self.error_reporter.borrow_mut();
         errors.iter().for_each(|e| reporter.error(e.line, &e.message));
+    }
+
+    fn print_parser_errors(&mut self, errors: Vec<parser::ParserError>) {
+        let mut reporter = self.error_reporter.borrow_mut();
+
+        for e in errors {
+            if e.token.token_type == TokenType::EOF {
+                reporter.report(e.token.line, "at end", &e.message);
+            } else {
+                reporter.report(e.token.line, &format!("at '{}'", e.token.lexeme), &e.message);
+            }
+        }
     }
 }
 
