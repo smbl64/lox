@@ -19,7 +19,7 @@ cargo test
 
 Test data are copied from the author's [GitHub repository][test-data]. I have modified some of the test cases, because in those cases the original one didn't make sense to me!
 
-# License
+## License
 
 This code is available under the [MIT License](http://github.com/smbl64/lox/tree/master/LICENSE).
 
