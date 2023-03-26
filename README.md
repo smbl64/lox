@@ -7,7 +7,6 @@ A [Lox][lox] interpreter based on the amazing [Crafting Interpreters][book] book
 ## Use it
 
 Run a Lox file via `cargo r -- filename.lox`.
-Run `cargo r` to enter the REPL mode.
 
 ## Tests
 
